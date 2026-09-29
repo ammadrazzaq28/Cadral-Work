@@ -14,6 +14,7 @@ Skills live flat in `.claude/skills/` (Claude Code needs that). The folders in `
 | `video` | Hypit, Hyperframes, Remotion |
 | `research` | Firecrawl web research |
 | `writing` | Copy and public-facing text |
+| `wordpress` | WordPress sites: block themes, blocks, plugins, local env, MCP, performance |
 
 Rules:
 - First decide which folder the task belongs to. Suggest and use skills **only from that folder** (plus `code` for any build work). Never suggest skills from an unrelated folder (e.g. no WordPress or video skills while building an app).
@@ -60,3 +61,7 @@ Rules:
 - `designrique/ai-graphic-design-skill`: 1 skills
 - `nolangz/pixel2motion`: 1 skills
 - `splash-screen`: written for Cadral (no good repo skill existed)
+
+## wordpress folder sources
+- `WordPress/agent-skills` (official): 19 skills
+- `Automattic/wordpress-agent-skills`: site-specification, wordpress-block-theming, design-systems
