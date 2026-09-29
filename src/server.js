@@ -2,6 +2,7 @@
 import express from "express";
 import { config, validateConfig } from "./config.js";
 import { webhookRouter } from "./webhook.js";
+import { slackOAuthRouter } from "./slackOAuth.js";
 
 // Validate the env vars this service needs at startup.
 // The webhook flow needs a ClickUp token (to fetch task details) and Slack.
@@ -31,9 +32,14 @@ app.get("/health", (_req, res) => {
 
 app.use(webhookRouter);
 
+// "Connect with Slack" OAuth v2 routes. These self-report when OAuth isn't
+// configured (helpful HTML page) rather than depending on startup validation.
+app.use(slackOAuthRouter);
+
 app.listen(config.port, () => {
   console.log(`cadral-clickup-slack listening on port ${config.port}`);
   console.log(`  Health:  GET  /health`);
   console.log(`  Webhook: POST /clickup/webhook`);
+  console.log(`  Connect: GET  /slack/install`);
   console.log(`  Slack target: ${config.slack.channel}`);
 });

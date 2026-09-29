@@ -1,11 +1,14 @@
 // Slack notifier. Uses chat.postMessage with a bot token when available,
 // otherwise falls back to an incoming webhook URL.
 import { config } from "./config.js";
+import { getFirstInstallation } from "./tokenStore.js";
 
 const CHAT_POST_MESSAGE_URL = "https://slack.com/api/chat.postMessage";
 
 /**
  * Post a message to the configured Slack channel (#all-cadral by default).
+ * Bot token precedence: (a) SLACK_BOT_TOKEN env, else (b) a stored OAuth
+ * installation's bot token, else (c) fall back to the incoming webhook URL.
  * @param {string} text        - Fallback / notification text (required).
  * @param {object[]} [blocks]  - Optional Slack Block Kit blocks for rich layout.
  */
@@ -13,8 +16,14 @@ export async function notify(text, blocks) {
   if (!text) throw new Error("slack.notify requires message text.");
 
   if (config.slack.botToken) {
-    return postWithBotToken(text, blocks);
+    return postWithBotToken(config.slack.botToken, text, blocks);
   }
+
+  const installation = getFirstInstallation();
+  if (installation?.botToken) {
+    return postWithBotToken(installation.botToken, text, blocks);
+  }
+
   if (config.slack.webhookUrl) {
     return postWithWebhook(text, blocks);
   }
@@ -24,14 +33,14 @@ export async function notify(text, blocks) {
 }
 
 // Post via chat.postMessage using a Bearer bot token.
-async function postWithBotToken(text, blocks) {
+async function postWithBotToken(botToken, text, blocks) {
   const payload = { channel: config.slack.channel, text };
   if (blocks) payload.blocks = blocks;
 
   const res = await fetch(CHAT_POST_MESSAGE_URL, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${config.slack.botToken}`,
+      Authorization: `Bearer ${botToken}`,
       "Content-Type": "application/json; charset=utf-8",
     },
     body: JSON.stringify(payload),

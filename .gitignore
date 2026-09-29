@@ -6,6 +6,10 @@ node_modules/
 .env.*
 !.env.example
 
+# Slack OAuth token store (contains bot tokens — never commit)
+.slack-tokens.json
+*.slack-tokens.json
+
 # Logs
 logs/
 *.log

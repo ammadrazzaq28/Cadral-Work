@@ -45,6 +45,12 @@ See `.env.example` for the full list with comments. Summary:
 | `SLACK_BOT_TOKEN`           | one of   | Bot token (`xoxb-…`) for `chat.postMessage` (preferred).       |
 | `SLACK_WEBHOOK_URL`         | one of   | Incoming webhook URL (used if no bot token).                   |
 | `SLACK_CHANNEL`             | optional | Channel for bot posts. Default `#all-cadral`.                  |
+| `SLACK_CLIENT_ID`           | optional | Slack app Client ID — enables the OAuth "Connect" flow.        |
+| `SLACK_CLIENT_SECRET`       | optional | Slack app Client Secret — enables the OAuth "Connect" flow.    |
+| `SLACK_SIGNING_SECRET`      | optional | Reserved for future request-signature verification.            |
+| `SLACK_REDIRECT_URI`        | optional | OAuth redirect URL. Derived from the request host if unset.    |
+| `SLACK_OAUTH_SCOPES`        | optional | Bot scopes. Default `chat:write,chat:write.public`.            |
+| `SLACK_TOKEN_STORE`         | optional | OAuth token store path. Default `.slack-tokens.json`.          |
 | `PORT`                      | optional | Server port. Default `3000`.                                   |
 
 ---
@@ -75,7 +81,33 @@ See `.env.example` for the full list with comments. Summary:
    Workspace**, choosing **#all-cadral**.
 2. Copy the webhook URL into `SLACK_WEBHOOK_URL`.
 
-The service prefers the bot token when both are set.
+**Option C — Connect with Slack (OAuth):**
+
+Instead of pasting a bot token, let a workspace authorize the app through a
+standard Slack OAuth v2 flow. The resulting bot token is stored locally and
+used automatically by the notifier.
+
+1. Create a Slack app at https://api.slack.com/apps → **From scratch**.
+2. Under **OAuth & Permissions** → **Redirect URLs**, add
+   `<your-host>/slack/oauth/callback` (e.g.
+   `https://your-public-host/slack/oauth/callback`) and save.
+3. Under **OAuth & Permissions** → **Scopes** → **Bot Token Scopes**, add
+   **`chat:write`** (and **`chat:write.public`** to post without inviting the
+   bot). These are requested by default; override with `SLACK_OAUTH_SCOPES`.
+4. From the app's **Basic Information** page, copy the **Client ID** and
+   **Client Secret** into `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` in `.env`.
+5. Start the server, then visit **`/slack/install`** in a browser and approve
+   the install. You'll see a "✅ Connected" page.
+
+The bot token is written to the token store file (`SLACK_TOKEN_STORE`, default
+`.slack-tokens.json` in the repo root, which is **gitignored**) and is used
+automatically by `notify()`. Token resolution order is: `SLACK_BOT_TOKEN`
+(env) → stored OAuth installation → `SLACK_WEBHOOK_URL`.
+
+> If `SLACK_REDIRECT_URI` is unset, the callback URL is derived from the
+> incoming request (`<scheme>://<host>/slack/oauth/callback`). Set it
+> explicitly when the public URL differs from what the server sees (e.g.
+> behind a proxy).
 
 ---
 
@@ -163,9 +195,11 @@ On success it prints the created task id and URL.
 src/
   config.js       env parsing + validation
   clickup.js      ClickUp API client (createTask, getTask)
-  slack.js        Slack notifier (bot token or incoming webhook)
+  slack.js        Slack notifier (env bot token / stored OAuth token / webhook)
+  slackOAuth.js   Express router: /slack/install + /slack/oauth/callback
+  tokenStore.js   JSON-file persistence for OAuth installations (bot tokens)
   webhook.js      Express router: /clickup/webhook + signature verify
-  server.js       Express app + /health, mounts the webhook router
+  server.js       Express app + /health, mounts webhook + Slack OAuth routers
   createTask.js   CLI to create a task
 .env.example      documented env vars
 ```
