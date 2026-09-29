@@ -39,3 +39,24 @@ Rules:
 | `/copywriting` + `/avoid-ai-writing` | Any words a client or the public will read. |
 | `/firecrawl*` | Web research and reading pages. |
 | `/code-review` (built-in) | Reviewing changes before they are merged. |
+
+## app-development folder sources
+- `wshobson/agents`: 83 skills
+- `evanca/flutter-ai-rules`: 37 skills
+- `mattpocock/skills`: 35 skills
+- `expo/skills`: 26 skills
+- `addyosmani/agent-skills`: 24 skills
+- `plugin87/ux-ui-agent-skills`: 17 skills
+- `Leonxlnx/taste-skill`: 13 skills
+- `callstackincubator/agent-skills`: 13 skills
+- `treylom/prompt-engineering-skills`: 10 skills
+- `vercel-labs/agent-skills`: 9 skills
+- `nextlevelbuilder/ui-ux-pro-max-skill`: 7 skills
+- `Jakubantalik/transitions.dev`: 4 skills
+- `Code-with-Beto/skills`: 4 skills
+- `Appllama/appllama-skills`: 2 skills
+- `AvdLee/SwiftUI-Agent-Skill`: 2 skills
+- `skydashnet/material-design-3-ui-skill`: 1 skills
+- `designrique/ai-graphic-design-skill`: 1 skills
+- `nolangz/pixel2motion`: 1 skills
+- `splash-screen`: written for Cadral (no good repo skill existed)
