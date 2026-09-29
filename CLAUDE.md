@@ -4,6 +4,22 @@
 - Whenever a skill is added or updated in `.claude/skills/`, also save it to the Dera dashboard with `mcp__Dera__save_skill` (name and description from the frontmatter, content = full SKILL.md).
 - When the user names a new command/skill, first check `.claude/skills/`; if missing, search GitHub for a matching skill, add it to `.claude/skills/`, and save it to Dera.
 
+## Skill folders
+Skills live flat in `.claude/skills/` (Claude Code needs that). The folders in `.claude/skill-folders/<folder>/` group them; the same folder names are the `category` in the Dera dashboard.
+
+| Folder | For |
+|---|---|
+| `code` | Dev workflow for any build: plan, TDD, debug, review, verify, project setup |
+| `app-development` | App A-Z: UI/UX, splash, icons, prompts, mobile, backend, store launch |
+| `video` | Hypit, Hyperframes, Remotion |
+| `research` | Firecrawl web research |
+| `writing` | Copy and public-facing text |
+
+Rules:
+- First decide which folder the task belongs to. Suggest and use skills **only from that folder** (plus `code` for any build work). Never suggest skills from an unrelated folder (e.g. no WordPress or video skills while building an app).
+- If the folder has no fitting skill, say so and search GitHub for one; don't borrow from an unrelated folder.
+- Every new skill gets a folder: symlink it into `.claude/skill-folders/<folder>/` and save it to Dera with `category` = folder name.
+
 ## Commands
 | Command | Use |
 |---|---|
