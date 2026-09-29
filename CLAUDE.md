@@ -16,3 +16,10 @@
 | `/ask-audit` | Before handing work over: checks that every ask made it in. |
 | `/newproject` | Starting a project: the Cadral folder structure. |
 | `/system-forge` | Turning a project into an engine: agents, rules, checks, tests and memory. |
+| `/graph-engineering` + `/loop-design-check` | Choosing an agent architecture, and checking that a loop cannot spin or cheat its own checks. |
+| `/skill-creator` | Making or changing a skill: every skill passes an eval before it counts as shipped. |
+| `/mem-search` (claude-mem) | Finding what was done in an earlier session. |
+| `/hypit` → `/hyperframes*` + `/remotion-*` | Video: Hypit directs, Hyperframes and Remotion build it. |
+| `/copywriting` + `/avoid-ai-writing` | Any words a client or the public will read. |
+| `/firecrawl*` | Web research and reading pages. |
+| `/code-review` (built-in) | Reviewing changes before they are merged. |
