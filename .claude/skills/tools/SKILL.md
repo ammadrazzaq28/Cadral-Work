@@ -10,7 +10,7 @@ Use this for any task when you are unsure which tool, skill or connector fits.
 ## Steps
 
 1. **Split the task** into concrete steps (research, write, code, design, publish, notify...).
-2. **Pick the folder first.** Decide which skill folder the task belongs to (`.claude/skill-folders/`: code, app-development, wordpress, video, research, writing; same names as Dera categories). Only look at skills in that folder, plus `code` for build work. Never suggest skills from an unrelated folder.
+2. **Pick the folder first.** Decide which skill folder the task belongs to (`.claude/skill-folders/`: code, app-development, wordpress, video, research, writing, productivity; same names as Dera categories). Only look at skills in that folder, plus `code` for build work. Never suggest skills from an unrelated folder.
 3. **Search the stack** for each step, inside that folder:
    - Project and plugin skills listed in this session (`.claude/skills/*`, e.g. brainstorming, writing-plans, test-driven-development, systematic-debugging).
    - Dera team dashboard: `list_skills` / `suggest_skills`, keeping only results whose `category` is the chosen folder; `list_tools` for tools the team already reviewed.

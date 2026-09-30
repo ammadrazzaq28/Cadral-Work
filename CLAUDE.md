@@ -15,6 +15,7 @@ Skills live flat in `.claude/skills/` (Claude Code needs that). The folders in `
 | `research` | Firecrawl web research |
 | `writing` | Copy and public-facing text |
 | `wordpress` | WordPress sites: block themes, blocks, plugins, local env, MCP, performance |
+| `productivity` | Business and everyday work: leads, invoices, meetings, resumes, files, visual assets |
 
 Rules:
 - First decide which folder the task belongs to. Suggest and use skills **only from that folder** (plus `code` for any build work). Never suggest skills from an unrelated folder (e.g. no WordPress or video skills while building an app).
@@ -65,3 +66,12 @@ Rules:
 ## wordpress folder sources
 - `WordPress/agent-skills` (official): 19 skills
 - `Automattic/wordpress-agent-skills`: site-specification, wordpress-block-theming, design-systems
+
+## Added from the RoundtableSpace list
+- `DietrichGebert/ponytail`: ponytail (code), ponytail-audit (code), ponytail-debt (code), ponytail-gain (code), ponytail-help (code), ponytail-review (code)
+- `JuliusBrussee/caveman`: cavecrew (code), caveman (code), caveman-commit (code), caveman-compress (code), caveman-discover (code), caveman-evidence-review (code), caveman-explore (code), caveman-help (code), caveman-learn (code), caveman-manage (code), caveman-optimize (code), caveman-review (code), caveman-setup (code), caveman-stats (code), investigate-first (code), lean-build (code), migration (code), safe-refactor (code), surgical-patch (code), verify-and-stop (code)
+- `Egonex-AI/Understand-Anything`: understand (code), understand-chat (code), understand-dashboard (code), understand-diff (code), understand-domain (code), understand-explain (code), understand-figma (code), understand-knowledge (code), understand-onboard (code)
+- `tt-a1i/archify`: archify (code), archify-review (code)
+- `ComposioHQ/awesome-claude-skills`: changelog-generator (code), mcp-builder (code), webapp-testing (code), langsmith-fetch (code), developer-growth-analysis (code), artifacts-builder (code), content-research-writer (writing), internal-comms (writing), twitter-algorithm-optimizer (writing), youtube-downloader (video), lead-research-assistant (productivity), invoice-organizer (productivity), meeting-insights-analyzer (productivity), tailored-resume-generator (productivity), raffle-winner-picker (productivity), domain-name-brainstormer (productivity), file-organizer (productivity), competitive-ads-extractor (productivity), canvas-design (productivity), theme-factory (productivity), brand-guidelines (productivity), slack-gif-creator (productivity), image-enhancer (productivity)
+- `Graphify-Labs/graphify`: graphify (code)
+- Skipped: 832 `composio-skills/*-automation` (need a Composio account), `connect`, `connect-apps`, `skill-share` (need Composio/Rube), `template-skill`, `document-skills` (already built in), `skill-creator` (already installed). Graphify needs its CLI: `uv tool install graphifyy`.
