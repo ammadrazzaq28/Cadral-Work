@@ -16,3 +16,6 @@ npm-debug.log*
 *.swp
 .idea/
 .vscode/
+
+# Generated HyperFrames projects (rebuild with build.mjs)
+video/*/project/

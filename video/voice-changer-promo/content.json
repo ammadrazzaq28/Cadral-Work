@@ -1,0 +1,20 @@
+{
+  "slug": "voice-changer-promo",
+  "appName": "Voice Changer",
+  "eyebrow": "Voice Changer",
+  "checklistTitle": "Sound different in 5 steps",
+  "tagline": "Sound like anyone.",
+  "badge": ["Download on the", "App Store"],
+  "tasks": [
+    {"label": "Tap to record your voice", "at": 2.2, "screen": "record.png"},
+    {"label": "Pick an effect – Robot, Chipmunk, Monster, Alien, Echo", "at": 5.2, "screen": "effects.png"},
+    {"label": "Preview it instantly with live playback", "at": 7.8, "screen": "preview.png"},
+    {"label": "Fine-tune pitch and speed", "at": 10.2, "screen": "adjust.png"},
+    {"label": "Export and share to WhatsApp, Instagram and TikTok", "at": 12.0, "screen": "share.png"}
+  ],
+  "effects": ["Robot", "Chipmunk", "Monster", "Alien", "Echo"],
+  "pickedEffect": "Robot",
+  "shareTargets": ["WhatsApp", "Instagram", "TikTok"],
+  "endCardAt": 13.4,
+  "duration": 17.5
+}

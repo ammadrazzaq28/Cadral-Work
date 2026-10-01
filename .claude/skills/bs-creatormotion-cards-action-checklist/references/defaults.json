@@ -1,0 +1,19 @@
+{
+  "tasks": [
+    {
+      "label": "Review the notes",
+      "at": 1.4
+    },
+    {
+      "label": "Choose one action",
+      "at": 3.1
+    },
+    {
+      "label": "Try it this week",
+      "at": 4.8
+    }
+  ],
+  "screenTitle": "Session checklist",
+  "presenter": false,
+  "screenMediaKey": "screen-recording"
+}

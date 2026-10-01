@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "assets": {
+    "mobile-screen": {
+      "file": "mobile-screen.png",
+      "kind": "generated-image",
+      "provider": "built-in-imagegen",
+      "prompt": "Use case: ui-mockup. Asset type: original mobile notes application screenshot used as image content within a B-roll phone frame. One very tall 9:19.5 portrait flat screen filling the full canvas, NO physical device or outer phone border. Beautiful crisp light cream interface, restrained sage/amber accents. Top status time '9:41', small back arrow, title 'Workshop notes'. Hero photograph occupying upper quarter shows an open notebook and red pencil on an oak table. Below: clear section 'Next session' with readable short paragraphs and three useful checklist items 'Review the notes', 'Choose one action', 'Try it this week'. Small circular realistic human profile thumbnail next to 'Shared with Maya'. A small voice message card with waveform, duration '0:24', and microphone control. Bottom modest toolbar. Precise elegant real app typography, rich visual content. No real app names, brands, personal information, watermark, skeleton text or blank placeholder blocks.",
+      "redistributable": true,
+      "sha256": "a3d7bce4377f6ec0998e1e30e58484383efc718d1a24455a1afbdd994e3911ac",
+      "generatedAt": "2026-09-23T08:04:05.652343+00:00",
+      "generationId": "exec-b2ed854d-debc-437f-94c7-f24e878ceb0b"
+    }
+  },
+  "effects": {
+    "bs-creatormotion-cards-action-checklist": {
+      "mobileScreen": "mobile-screen"
+    }
+  }
+}
