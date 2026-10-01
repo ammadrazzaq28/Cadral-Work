@@ -1,0 +1,859 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Loopnote · Say it once</title>
+<meta name="description" content="Loopnote turns your voice memos into organized notes and reminders. On-device transcription for iPhone.">
+<style>
+/* Loopnote landing page, built on the Scattered-Cards Magazine visual system:
+   white editorial ground, a fan of rotated paper cards, a ruled topic index,
+   double-rule section heads, serif display type and square 2px corners. */
+:root{
+  --ground:#f6f5f1;--paper:#fff;--ink:#20231e;--muted:#62685e;--accent:#293b28;--on-accent:#fff;
+  --tint:#f0f1e8;--line:#dedfd7;--card-radius:2px;
+  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  --sans:"Helvetica Neue",Helvetica,Arial,sans-serif;
+  --ui:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue",Helvetica,Arial,sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
+button{font:inherit;cursor:pointer;color:inherit}
+a{color:inherit;text-decoration:none}
+button,a{touch-action:manipulation;transition:background .18s,transform .18s,box-shadow .18s,color .18s}
+a:focus-visible,button:focus-visible{outline:3px solid var(--accent);outline-offset:4px}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-family:var(--serif);line-height:1.05;letter-spacing:-.015em;font-weight:500}
+h2{font-size:clamp(31px,3.5vw,54px)}
+h3{font-size:23px;line-height:1.14}
+p{max-width:68ch}
+p+p{margin-top:18px}
+[hidden]{display:none!important}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.ic{width:20px;height:20px;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.wrap{width:min(1180px,calc(100% - 88px));margin:auto}
+.skip{position:absolute;left:12px;top:-60px;z-index:100;background:var(--ink);color:var(--paper);padding:10px 16px}
+.skip:focus{top:12px}
+
+/* Header: folded-down running head */
+.site-header{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--line);transition:border-color .25s}
+.head-inner{min-height:84px;display:flex;align-items:center;justify-content:space-between;gap:24px;transition:min-height .25s}
+.site-header.is-stuck{border-bottom-color:var(--ink)}
+.site-header.is-stuck .head-inner{min-height:62px}
+.brand{font-family:var(--serif);font-weight:850;font-size:22px;letter-spacing:-.07em;display:inline-flex;align-items:center;gap:8px;min-height:44px}
+.brand .ic{width:22px;height:22px;stroke-width:1.9}
+.nav{display:flex;align-items:center;gap:26px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.16em}
+.nav a{padding:6px 0;border-bottom:1px solid transparent}
+.nav a:hover,.nav a[aria-current=true]{border-bottom-color:var(--ink)}
+.nav-end{display:flex;gap:10px;align-items:center}
+.nav-toggle{display:none;width:44px;height:44px;align-items:center;justify-content:center;background:transparent;border:1px solid var(--line);border-radius:50%;padding:0}
+.nav-toggle .ic-close{display:none}
+.nav-toggle[aria-expanded=true] .ic-open{display:none}
+.nav-toggle[aria-expanded=true] .ic-close{display:block}
+
+/* Buttons */
+.btn{display:inline-flex;justify-content:center;align-items:center;gap:10px;border:1px solid var(--ink);background:var(--ink);color:#fff;padding:13px 24px;border-radius:var(--card-radius);min-height:46px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;line-height:1.2;text-align:center}
+.btn:hover{background:var(--accent);border-color:var(--accent)}
+.btn.outline{background:transparent;color:var(--ink)}
+.btn.outline:hover{background:var(--ink);color:var(--paper)}
+.btn.light{background:var(--paper);color:var(--ink);border-color:var(--paper)}
+.btn.light:hover{background:var(--tint);border-color:var(--tint)}
+.btn.small{min-height:44px;padding:10px 18px}
+.btn .ic{width:18px;height:18px}
+
+.eyebrow{text-transform:uppercase;letter-spacing:.2em;font-size:10px;line-height:1.5;font-weight:600;margin-bottom:18px;color:var(--muted);max-width:none}
+.lead{font-size:18px;line-height:1.55;max-width:48ch;margin-top:25px;color:var(--muted)}
+.muted{color:var(--muted)}
+.section{padding-block:54px}
+.section-head{display:flex;align-items:end;justify-content:space-between;gap:28px;margin-bottom:34px;padding-bottom:14px;border-bottom:3px double var(--ink)}
+.section-head h2{font-size:38px;letter-spacing:-.03em}
+.section-head p{max-width:38ch;font-size:14px}
+.actions{display:flex;align-items:center;justify-content:center;gap:15px;flex-wrap:wrap;margin-top:28px}
+
+/* Editorial hero + fan of rotated paper cards (iPhone screenshot placeholders) */
+.editorial-hero{text-align:center;padding:30px 0 44px;overflow:hidden}
+.editorial-fan{position:relative;height:440px;max-width:970px;margin:22px auto 18px}
+.editorial-fan>a{position:absolute;left:calc(50% - 8.25% + (var(--i) - 2) * 15%);top:calc(30px + (var(--i) - 2) * (var(--i) - 2) * 11px);width:16.5%;background:var(--paper);padding:10px 10px 0;box-shadow:0 8px 25px #0002;transform:rotate(calc((var(--i) - 2) * 9deg));transform-origin:50% 90%;transition:transform .25s,box-shadow .25s;z-index:var(--z)}
+.editorial-fan>a:hover,.editorial-fan>a:focus-visible{transform:translateY(-18px) rotate(0);z-index:6;box-shadow:0 18px 40px #0003}
+.editorial-fan .cap{display:flex;justify-content:space-between;gap:6px;text-align:left;font-size:10px;letter-spacing:.06em;padding:9px 2px;line-height:1.2}
+.editorial-fan .cap em{font-family:var(--serif);color:var(--muted);letter-spacing:0;white-space:nowrap}
+.editorial-hero h1{font-size:clamp(40px,5.4vw,74px);letter-spacing:-.065em;font-weight:800;line-height:1.02}
+.editorial-hero .lead{font-size:16px;margin:22px auto 0;max-width:40ch}
+.hero-note{margin:16px auto 0;font-size:12px;color:var(--muted)}
+
+/* CSS iPhone frame. Every size inside is in container units so the
+   mock scales from the 80px fan thumbnail to the full card. */
+.phone{position:relative;container-type:inline-size;aspect-ratio:9/19.5;width:100%;background:#191b18;border-radius:16% / 7.4%;padding:4.2%;box-shadow:inset 0 0 0 1px #3a3d37}
+.phone::before{content:"";position:absolute;right:-1.6%;top:24%;width:1.6%;height:11%;background:#2c2f2a;border-radius:0 2px 2px 0}
+.scr{position:relative;height:100%;overflow:hidden;border-radius:12.5% / 5.8%;background:var(--paper);font-family:var(--ui);font-size:5.2cqw;line-height:1.3;color:var(--ink);text-align:left;padding:17cqw 7cqw 9cqw}
+.island{position:absolute;top:3.4cqw;left:50%;transform:translateX(-50%);width:29cqw;height:8.4cqw;border-radius:6cqw;background:#0b0c0a;z-index:2}
+.status{position:absolute;top:4.2cqw;left:9cqw;right:8cqw;display:flex;justify-content:space-between;align-items:center;font-size:4.4cqw;font-weight:600;z-index:1}
+.status i{display:flex;gap:1.2cqw;align-items:flex-end}
+.status i b{display:block;width:1.1cqw;background:currentColor;border-radius:.4cqw}
+.status i b:nth-child(1){height:1.6cqw}.status i b:nth-child(2){height:2.3cqw}.status i b:nth-child(3){height:3cqw}
+.status i s{display:block;width:6cqw;height:3cqw;border:.5cqw solid currentColor;border-radius:1cqw;margin-left:1.4cqw;position:relative}
+.status i s::after{content:"";position:absolute;inset:.5cqw;right:1.6cqw;background:currentColor;border-radius:.3cqw}
+.homebar{position:absolute;bottom:2.6cqw;left:50%;transform:translateX(-50%);width:34cqw;height:1.3cqw;border-radius:1cqw;background:currentColor;opacity:.85}
+.ph-label{position:absolute;left:50%;bottom:16cqw;transform:translateX(-50%);font-size:4cqw;color:var(--muted);letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;padding:.8cqw 2.6cqw;border:1px dashed currentColor;border-radius:4cqw;opacity:.55}
+
+/* Screen 1: lock screen widget */
+.s-lock{background:linear-gradient(170deg,#3b5038 0%,#293b28 55%,#1c281b 100%);color:#f1f3ea;text-align:center}
+.s-lock .date{font-size:5cqw;font-weight:500;opacity:.85;margin-top:2cqw}
+.s-lock .time{font-size:25cqw;font-weight:300;letter-spacing:-.04em;line-height:1}
+.s-lock .widget{margin-top:12cqw;display:flex;align-items:center;gap:3.5cqw;padding:3.6cqw;border-radius:6cqw;background:#ffffff26;text-align:left}
+.s-lock .widget .mic{width:12cqw;height:12cqw;border-radius:50%;background:#f1f3ea;color:var(--accent);display:grid;place-items:center;flex:none}
+.s-lock .widget .mic svg{width:6.5cqw;height:6.5cqw}
+.s-lock .widget b{display:block;font-size:4.8cqw}
+.s-lock .widget small{display:block;font-size:3.8cqw;opacity:.8}
+.s-lock .corner{position:absolute;bottom:9cqw;width:11cqw;height:11cqw;border-radius:50%;background:#ffffff2e}
+.s-lock .corner.l{left:9cqw}.s-lock .corner.r{right:9cqw}
+
+/* Screen 2: recording */
+.s-rec .label{font-size:4cqw;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.s-rec .timer{font-family:var(--serif);font-size:17cqw;letter-spacing:-.04em;margin-top:2cqw}
+.wave{display:flex;align-items:center;gap:1.3cqw;height:30cqw;margin:6cqw 0}
+.wave b{flex:1;height:calc(var(--h) * 1%);background:var(--accent);border-radius:1cqw;min-height:2cqw}
+.wave b:nth-child(n+16){background:var(--line)}
+.s-rec .live{font-family:var(--serif);font-style:italic;font-size:5.4cqw;line-height:1.35;color:var(--ink)}
+.s-rec .live span{color:var(--muted)}
+.s-rec .stop{position:absolute;left:50%;bottom:12cqw;transform:translateX(-50%);width:19cqw;height:19cqw;border-radius:50%;border:1cqw solid var(--line);display:grid;place-items:center}
+.s-rec .stop::after{content:"";width:6.5cqw;height:6.5cqw;border-radius:1.4cqw;background:#b4472f}
+
+/* Screen 3: notes inbox */
+.s-notes h4,.s-folders h4{margin:0;font-size:10cqw;font-weight:750;letter-spacing:-.03em}
+.chips-mini{display:flex;gap:1.8cqw;margin:3.5cqw 0 3cqw;flex-wrap:wrap}
+.chips-mini span{font-size:3.7cqw;padding:1cqw 3cqw;border:1px solid var(--line);border-radius:4cqw}
+.chips-mini span:first-child{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.row{display:flex;gap:3cqw;align-items:flex-start;padding:3.4cqw 0;border-bottom:1px solid var(--line)}
+.row .box{width:5cqw;height:5cqw;border:1px solid var(--muted);border-radius:50%;flex:none;margin-top:.8cqw}
+.row .box.done{background:var(--accent);border-color:var(--accent)}
+.row small{display:block;font-size:3.4cqw;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.row b{display:block;font-weight:600;font-size:4.8cqw;line-height:1.25}
+
+/* Screen 4: reminder sheet */
+.s-remind{background:var(--tint)}
+.bubble{background:var(--paper);border-radius:5cqw;padding:4cqw;font-family:var(--serif);font-style:italic;font-size:5.4cqw;line-height:1.35;box-shadow:0 1px 0 var(--line)}
+.bubble mark{background:#dfe6c9;color:inherit;padding:0 .6cqw}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--paper);border-radius:8cqw 8cqw 0 0;padding:4cqw 7cqw 12cqw;box-shadow:0 -4px 18px #0000001a}
+.sheet .grab{width:12cqw;height:1.3cqw;border-radius:1cqw;background:var(--line);margin:0 auto 4cqw}
+.sheet small{display:block;font-size:3.6cqw;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.sheet strong{display:block;font-size:6.4cqw;font-weight:650;line-height:1.2;margin:1.4cqw 0 3cqw;letter-spacing:-.02em}
+.sheet .line{display:flex;justify-content:space-between;align-items:center;font-size:4.4cqw;padding:2.6cqw 0;border-top:1px solid var(--line)}
+.toggle{width:10cqw;height:6cqw;border-radius:4cqw;background:var(--accent);position:relative}
+.toggle::after{content:"";position:absolute;right:.8cqw;top:.8cqw;width:4.4cqw;height:4.4cqw;border-radius:50%;background:#fff}
+.sheet .go{margin-top:3cqw;background:var(--ink);color:var(--paper);border-radius:3cqw;text-align:center;padding:2.8cqw;font-size:4.6cqw;font-weight:600}
+
+/* Screen 5: smart folders */
+.s-folders{background:var(--ground)}
+.fold-grid{display:grid;grid-template-columns:1fr 1fr;gap:3cqw;margin-top:5cqw}
+.fold-grid div{background:var(--paper);border-radius:4cqw;padding:3.6cqw;min-height:24cqw;display:flex;flex-direction:column;justify-content:space-between}
+.fold-grid b{font-size:4.6cqw;font-weight:600}
+.fold-grid span{font-family:var(--serif);font-size:9cqw;line-height:1}
+.fold-grid div:first-child{background:var(--accent);color:var(--on-accent)}
+.ondevice{display:flex;align-items:center;gap:2cqw;margin-top:5cqw;font-size:4cqw;color:var(--muted)}
+.ondevice svg{width:5cqw;height:5cqw}
+
+/* Ruled topic index, used as the feature index */
+.topic-index{display:grid;grid-template-columns:1fr 1fr;gap:0 55px}
+.topic-index>a{display:flex;align-items:center;gap:22px;padding:23px 0;border-bottom:1px solid var(--line);font-family:var(--serif);font-size:25px;letter-spacing:-.02em;line-height:1.2}
+.topic-index>a>span:first-child{font-family:var(--sans);font-size:10px;color:var(--muted);letter-spacing:.1em;min-width:16px}
+.topic-index>a small{display:block;font-family:var(--sans);font-size:12px;letter-spacing:0;color:var(--muted);margin-top:4px}
+.topic-index .ic{margin-left:auto;transition:transform .2s}
+.topic-index>a:hover .ic{transform:translateX(4px)}
+
+/* Story cards */
+.grid{display:grid;gap:32px}
+.grid.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.card{min-width:0;position:relative}
+.card-image{display:block;aspect-ratio:3/2;overflow:hidden;background:var(--tint)}
+.card-meta{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-top:18px;font-family:var(--serif);font-style:italic;font-size:13px;color:var(--muted)}
+.card h3{margin-top:8px;font-size:25px;letter-spacing:-.04em}
+.card p{font-size:14px;margin-top:12px;color:var(--muted)}
+.card ul{margin:14px 0 0;padding:0;list-style:none;font-size:13px}
+.card li{padding:8px 0;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+.card li .ic{width:16px;height:16px;color:var(--accent)}
+.text-link{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;min-height:44px;border-bottom:1px solid transparent}
+.text-link:hover{border-bottom-color:var(--ink)}
+
+/* Feature illustrations (CSS art in place of photographs) */
+.scene{position:relative;width:100%;height:100%;container-type:inline-size;font-family:var(--ui);color:var(--ink)}
+.scene .tag{font-size:2.1cqw;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);margin-top:2.4cqw;text-align:center}
+.cap-scene{display:grid;grid-template-columns:1.25fr .8fr 1fr;align-items:center;gap:5cqw;padding:0 7cqw;background:radial-gradient(circle at 50% 120%,#e3e7d6,var(--tint) 60%)}
+.cap-widget{background:linear-gradient(170deg,#3b5038,#1f2c1e);color:#eef1e6;border-radius:4cqw;padding:3.4cqw;box-shadow:0 2cqw 5cqw #0000001f;transform:rotate(-4deg)}
+.cap-widget .t{font-size:7cqw;font-weight:300;letter-spacing:-.04em;line-height:1}
+.cap-widget .w{display:flex;gap:2cqw;align-items:center;margin-top:4cqw;background:#ffffff26;border-radius:3cqw;padding:2cqw}
+.cap-widget .w i{width:6cqw;height:6cqw;border-radius:50%;background:#eef1e6;flex:none}
+.cap-widget .w b{font-size:2.3cqw;font-weight:600;line-height:1.2}
+.cap-side{position:relative;height:38cqw;width:9cqw;margin:auto;background:#1c1e1b;border-radius:3cqw;box-shadow:0 2cqw 5cqw #0000001f}
+.cap-side::before{content:"";position:absolute;left:-1.1cqw;top:7cqw;width:1.2cqw;height:4.5cqw;border-radius:1cqw 0 0 1cqw;background:#b4472f}
+.cap-side::after{content:"";position:absolute;left:-1.1cqw;top:14cqw;width:1.2cqw;height:7cqw;border-radius:1cqw 0 0 1cqw;background:#3d413a}
+.cap-watch{position:relative;width:18cqw;margin:auto;transform:rotate(5deg)}
+.cap-watch::before,.cap-watch::after{content:"";position:absolute;left:3cqw;right:3cqw;height:8cqw;background:#c9cdbb}
+.cap-watch::before{top:-7cqw;border-radius:2cqw 2cqw 0 0}
+.cap-watch::after{bottom:-7cqw;border-radius:0 0 2cqw 2cqw}
+.cap-watch .face{position:relative;z-index:1;aspect-ratio:.84;background:#1c1e1b;border-radius:5cqw;display:grid;place-items:center;box-shadow:0 2cqw 5cqw #0000001f}
+.cap-watch .face i{width:8cqw;height:8cqw;border-radius:50%;background:#b4472f;box-shadow:0 0 0 1.8cqw #b4472f40}
+.org-scene{display:grid;grid-template-columns:1fr 8cqw 1fr;align-items:center;padding:0 7cqw;background:var(--tint)}
+.memo{background:var(--paper);padding:4cqw;box-shadow:0 1.5cqw 4cqw #0000001a;transform:rotate(-3deg)}
+.memo .wv{display:flex;gap:.6cqw;align-items:center;height:7cqw}
+.memo .wv b{flex:1;height:calc(var(--h) * 1%);background:var(--accent);border-radius:.4cqw}
+.memo p{font-family:var(--serif);font-style:italic;font-size:2.6cqw;line-height:1.4;margin-top:2.6cqw}
+.org-arrow{width:100%;color:var(--muted)}
+.stack{display:grid;gap:2cqw}
+.stack div{background:var(--paper);padding:2.2cqw 3cqw;border-left:.8cqw solid var(--accent);box-shadow:0 1cqw 3cqw #00000014}
+.stack div:nth-child(2){border-left-color:#8a9a6f;transform:translateX(3cqw)}
+.stack div:nth-child(3){border-left-color:#b4472f;transform:translateX(1cqw)}
+.stack small{display:block;font-size:1.9cqw;text-transform:uppercase;letter-spacing:.14em;color:var(--muted)}
+.stack b{display:block;font-size:2.7cqw;font-weight:600;line-height:1.3}
+
+/* Feature story with article body */
+.story{padding-top:54px}
+.story-intro{max-width:760px}
+.story-intro h2{font-size:clamp(38px,4.5vw,60px);letter-spacing:-.045em;max-width:16ch}
+.story-intro .lead{max-width:44ch;font-size:17px}
+.story .card-meta{max-width:760px;margin-top:22px}
+.article-hero{aspect-ratio:16/9;max-width:1000px;margin:24px auto 38px;overflow:hidden;background:var(--tint)}
+.rem-scene{display:grid;grid-template-columns:1.3fr 1fr;gap:5cqw;align-items:center;padding:0 7cqw;background:linear-gradient(180deg,var(--tint),#e7eadb)}
+.week{background:var(--paper);padding:3cqw;box-shadow:0 1.5cqw 4cqw #00000014}
+.week .mo{font-family:var(--serif);font-size:3.2cqw;letter-spacing:-.02em;margin-bottom:2cqw}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:1cqw;text-align:center}
+.days div{padding:1.4cqw 0;font-size:1.7cqw;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+.days div b{display:block;font-family:var(--serif);font-size:3cqw;font-weight:500;color:var(--ink);letter-spacing:0;margin-top:.6cqw}
+.days div.on{background:var(--accent);color:#c9d3c4}
+.days div.on b{color:#fff}
+.slots{margin-top:2cqw;display:grid;gap:1cqw}
+.slots div{display:flex;gap:2cqw;font-size:1.8cqw;padding:1.2cqw 0;border-top:1px solid var(--line);color:var(--muted)}
+.slots div.on{color:var(--ink);font-weight:600}
+.slots div.on::before{content:"";width:.6cqw;background:var(--accent)}
+.say{position:relative;background:var(--paper);padding:3cqw;border-radius:2.4cqw;font-family:var(--serif);font-style:italic;font-size:3cqw;line-height:1.35;box-shadow:0 1.5cqw 4cqw #00000014;transform:rotate(2deg)}
+.say mark{background:#dfe6c9;color:inherit}
+.say small{display:block;margin-top:2cqw;font-family:var(--ui);font-style:normal;font-size:1.7cqw;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.article-body{max-width:58ch;margin:0 auto;padding-bottom:22px;font-size:18px;line-height:1.8}
+.article-body p+p{margin-top:24px}
+.article-body blockquote{font-family:var(--serif);font-size:30px;line-height:1.3;margin:40px 0;border-left:3px solid var(--accent);padding-left:25px;letter-spacing:-.02em}
+
+/* Principles columns */
+.ff-cols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:40px 32px}
+.ff-col{border-top:1px solid var(--ink);padding-top:20px;min-width:0}
+.ff-num{display:block;font-size:11px;letter-spacing:.12em;color:var(--muted);margin-bottom:22px}
+.ff-col h3{font-size:21px;letter-spacing:-.03em}
+.ff-col p{margin-top:12px;font-size:14px;line-height:1.65;color:var(--muted)}
+
+/* Example memos (letters grid) */
+.ff-letter-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:24px}
+.ff-letter{margin:0;padding:30px 26px;background:var(--tint);border-radius:var(--card-radius);display:flex;flex-direction:column;gap:22px;min-width:0}
+.ff-letter blockquote{margin:0;font-family:var(--serif);font-size:19px;line-height:1.45;letter-spacing:-.02em;font-style:italic}
+.ff-letter figcaption{margin-top:auto;display:flex;flex-direction:column;gap:3px;font-size:12px;color:var(--muted)}
+.ff-letter figcaption strong{color:var(--ink);font-weight:650;font-size:13px}
+
+/* Pricing */
+.billing{display:inline-flex;border:1px solid var(--ink);padding:4px;gap:4px;margin:0 0 26px}
+.billing button{border:0;background:transparent;padding:10px 18px;min-height:44px;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;border-radius:var(--card-radius)}
+.billing button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+.billing button em{font-style:normal;opacity:.7;letter-spacing:.06em}
+.plans{display:grid;grid-template-columns:1fr 1fr 1fr;gap:24px;align-items:stretch}
+.price-card{padding:32px;background:var(--tint);border-radius:var(--card-radius);display:flex;flex-direction:column}
+.price-card .eyebrow{margin-bottom:10px}
+.price-card h3{font-size:30px;letter-spacing:-.03em}
+.price-card .price{font-family:var(--serif);font-size:48px;letter-spacing:-.04em;line-height:1.1;margin-top:18px}
+.price-card .price small{font-family:var(--sans);font-size:13px;letter-spacing:0;font-weight:400}
+.price-card .unit{font-size:12px;min-height:20px;margin-top:4px}
+.price-card ul{padding:0;margin:22px 0 26px;list-style:none;font-size:14px}
+.price-card li{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid #20231e1a}
+.price-card li .ic{width:16px;height:16px}
+.price-card .btn{margin-top:auto}
+.price-card.featured{background:var(--accent);color:var(--on-accent)}
+.price-card.featured .eyebrow,.price-card.featured .unit{color:#c9d3c4}
+.price-card.featured li{border-top-color:#ffffff26}
+.plan-notes{border-top:1px solid var(--ink);padding-top:22px}
+.plan-notes h3{font-size:21px;letter-spacing:-.03em}
+.plan-notes dl{margin:16px 0 0}
+.plan-notes dt{font-weight:600;font-size:13px;margin-top:16px}
+.plan-notes dd{margin:4px 0 0;font-size:14px;color:var(--muted)}
+
+/* FAQ accordion (hand-written, no library) */
+.ff-faq{display:grid;grid-template-columns:.8fr 1.2fr;gap:60px;align-items:start}
+.ff-faq h2{margin:0 0 16px;font-size:38px;letter-spacing:-.03em}
+.ff-faq>div:first-child>p{max-width:36ch;margin-bottom:24px;line-height:1.6}
+.acc{border-top:3px double var(--ink)}
+.acc-item{border-bottom:1px solid var(--line)}
+.acc-item h3{font-family:var(--sans);font-size:15px;letter-spacing:0;line-height:1.4;font-weight:600}
+.acc-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:18px;min-height:62px;padding:16px 0;background:transparent;border:0;text-align:left;font-weight:600}
+.acc-btn .ic{transition:transform .2s}
+.acc-btn[aria-expanded=true] .ic{transform:rotate(45deg)}
+.acc-panel p{font-size:14px;color:var(--muted);margin:0 0 22px;max-width:62ch}
+
+/* Final download call to action */
+.ff-cta{display:flex;align-items:center;justify-content:space-between;gap:40px;padding:60px;border-radius:var(--card-radius);background:var(--accent);color:var(--on-accent);position:relative;overflow:hidden}
+.ff-cta .eyebrow{color:#b9c6b7}
+.ff-cta h2{font-size:clamp(32px,3.6vw,52px);margin:0 0 12px;letter-spacing:-.045em}
+.ff-cta p{max-width:46ch;line-height:1.6;color:#dfe5dd}
+.ff-cta .small-print{font-size:12px;margin-top:14px;color:#b9c6b7}
+.ff-cta-actions{display:flex;gap:12px;flex-shrink:0;flex-wrap:wrap}
+.ff-cta .btn.outline{color:#fff;border-color:#7d907b}
+.ff-cta .btn.outline:hover{background:#ffffff1a}
+.cta-phone{width:150px;flex:none;transform:rotate(6deg);margin:-20px 0 -110px;box-shadow:0 20px 50px #0005;border-radius:16% / 7.4%}
+
+/* Footer + legal stubs */
+.legal{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;padding:44px 0 40px}
+.legal>div{border-top:1px solid var(--line);padding-top:16px}
+.legal h3{font-size:18px;letter-spacing:-.02em}
+.legal p{font-size:13px;color:var(--muted);margin-top:8px}
+.site-footer{padding:36px 0 24px;border-top:3px solid var(--ink)}
+.footer-top{display:grid;grid-template-columns:2fr 1fr 1fr;gap:35px}
+.footer-top p{font-size:13px;max-width:32ch;margin-top:14px;color:var(--muted)}
+.footer-links{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.footer-links strong{margin-bottom:6px;font-family:var(--serif);font-weight:600;font-style:italic;font-size:16px}
+.footer-links a{min-height:36px;display:flex;align-items:center}
+.footer-links a:hover{text-decoration:underline;text-underline-offset:4px}
+.fineprint{display:flex;justify-content:space-between;gap:20px;margin-top:28px;font-size:11px;color:var(--muted)}
+
+.reveal{animation:arrive .45s ease-out both}
+@keyframes arrive{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+@media(max-width:1000px){
+  .ff-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ff-letter-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ff-faq{grid-template-columns:1fr;gap:28px}
+  .plans{grid-template-columns:1fr 1fr}
+  .plan-notes{grid-column:1/-1}
+  .ff-cta{flex-direction:column;align-items:flex-start;padding:36px}
+  .cta-phone{display:none}
+}
+@media(max-width:900px){
+  .wrap{width:calc(100% - 40px)}
+  .head-inner{min-height:72px;position:relative}
+  .nav-toggle{display:inline-flex}
+  .nav{display:none;position:absolute;left:-20px;right:-20px;top:100%;background:var(--paper);padding:8px 20px 20px;z-index:40;flex-direction:column;align-items:stretch;gap:0;border-bottom:1px solid var(--ink)}
+  .nav.open{display:flex}
+  .nav a{padding:14px 0;border-bottom:1px solid var(--line);min-height:44px}
+  .section{padding-block:44px}
+  .rem-scene{grid-template-columns:1fr}
+  .rem-scene .say{display:none}
+}
+@media(max-width:650px){
+  .editorial-fan{height:300px;margin:18px -60px 10px}
+  .editorial-fan>a{width:19%;left:calc(50% - 9.5% + (var(--i) - 2) * 16.5%);top:calc(18px + (var(--i) - 2) * (var(--i) - 2) * 7px);padding:5px 5px 0}
+  .editorial-fan .cap{font-size:8px;padding:6px 1px;letter-spacing:.02em}
+  .editorial-fan .cap em{display:none}
+  .editorial-hero h1{font-size:44px}
+  .topic-index{grid-template-columns:1fr;gap:0}
+  .topic-index>a{font-size:21px;gap:14px;padding:18px 0}
+  .section-head{align-items:start;flex-direction:column;gap:12px}
+  .section-head h2{font-size:30px}
+}
+@media(max-width:600px){
+  .wrap{width:calc(100% - 32px)}
+  .nav{left:-16px;right:-16px;padding:8px 16px 20px}
+  .nav-end>.btn{display:none}
+  .grid.two,.plans,.ff-cols,.ff-letter-grid,.legal{grid-template-columns:1fr}
+  .grid{gap:40px}
+  .card h3{font-size:23px}
+  .section{padding-block:34px}
+  .editorial-hero{padding:22px 0 30px}
+  .editorial-hero .lead{font-size:15px}
+  .actions .btn{width:100%}
+  .story{padding-top:34px}
+  .story-intro h2{font-size:38px}
+  .article-hero{aspect-ratio:4/3}
+  .article-body{font-size:16px}
+  .article-body blockquote{font-size:24px;padding-left:18px}
+  .ff-faq h2{font-size:30px}
+  .ff-cta{padding:28px 22px}
+  .ff-cta-actions,.ff-cta-actions .btn{width:100%}
+  .price-card{padding:26px}
+  .billing{display:flex;width:100%}
+  .billing button{flex:1;padding:10px 8px}
+  .footer-top{grid-template-columns:1fr 1fr}
+  .footer-top>div:first-child{grid-column:1/-1}
+  .fineprint{flex-direction:column;gap:6px}
+  .cap-scene{gap:3cqw;padding:0 5cqw}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  .editorial-fan>a:hover,.editorial-fan>a:focus-visible{transform:rotate(calc((var(--i) - 2) * 9deg))}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header" id="top">
+  <div class="wrap head-inner">
+    <a class="brand" href="#top" aria-label="Loopnote, back to top">
+      <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4a8 8 0 1 0 8 8"/><path d="M20 4v4h-4"/><path d="M12 9v6M9 11v2M15 11v2"/></svg>Loopnote
+    </a>
+    <nav class="nav" id="site-nav" aria-label="Main navigation">
+      <a href="#features">Features</a>
+      <a href="#reminders">Reminders</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">Questions</a>
+    </nav>
+    <div class="nav-end">
+      <!-- App Store URL: swap #download for https://apps.apple.com/app/idXXXXXXXXX -->
+      <a class="btn small" href="#download">Download</a>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+        <svg class="ic ic-open" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        <svg class="ic ic-close" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="editorial-hero" aria-labelledby="hero-title">
+    <div class="wrap">
+      <p class="eyebrow reveal">For people who think out loud / iPhone</p>
+
+      <!-- Screenshot placeholders: each .phone[data-screenshot] is a CSS mock of the
+           Loopnote UI. To use real screenshots, replace the inner <div class="scr ...">
+           with <img class="scr" src="data:image/webp;base64,..." alt="..."> (1179x2556
+           PNG/WebP exported from the simulator, embedded as a data: URI). -->
+      <div class="editorial-fan" aria-label="App screens">
+        <a href="#capture" style="--i:0;--z:1" aria-label="Lock Screen widget: capture a memo">
+          <div class="phone" data-screenshot="1" aria-hidden="true">
+            <div class="scr s-lock">
+              <span class="island"></span>
+              <div class="status"><span></span><i><b></b><b></b><b></b><s></s></i></div>
+              <div class="date">Thursday 1 October</div>
+              <div class="time">9:41</div>
+              <div class="widget">
+                <span class="mic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+                <span><b>Tap to record</b><small>Loopnote</small></span>
+              </div>
+              <span class="corner l"></span><span class="corner r"></span>
+              <span class="homebar"></span>
+            </div>
+          </div>
+          <span class="cap"><span>Capture / 01</span><em>Placeholder</em></span>
+        </a>
+        <a href="#capture" style="--i:1;--z:2" aria-label="Recording screen">
+          <div class="phone" data-screenshot="1" aria-hidden="true">
+            <div class="scr s-rec">
+              <span class="island"></span>
+              <div class="status"><span>9:41</span><i><b></b><b></b><b></b><s></s></i></div>
+              <div class="label">Recording</div>
+              <div class="timer">0:14</div>
+              <div class="wave">
+                <b style="--h:30"></b><b style="--h:55"></b><b style="--h:80"></b><b style="--h:45"></b><b style="--h:95"></b><b style="--h:60"></b><b style="--h:35"></b><b style="--h:70"></b><b style="--h:88"></b><b style="--h:40"></b><b style="--h:62"></b><b style="--h:25"></b><b style="--h:75"></b><b style="--h:50"></b><b style="--h:66"></b><b style="--h:20"></b><b style="--h:12"></b><b style="--h:10"></b><b style="--h:8"></b>
+              </div>
+              <p class="live">&ldquo;Remind me Friday to send Priya the deck, <span>and buy oat milk&hellip;&rdquo;</span></p>
+              <span class="stop"></span>
+              <span class="homebar"></span>
+            </div>
+          </div>
+          <span class="cap"><span>Record / 02</span><em>Placeholder</em></span>
+        </a>
+        <a href="#organize" style="--i:2;--z:5" aria-label="Sorted notes inbox">
+          <div class="phone" data-screenshot="1" aria-hidden="true">
+            <div class="scr s-notes">
+              <span class="island"></span>
+              <div class="status"><span>9:41</span><i><b></b><b></b><b></b><s></s></i></div>
+              <h4>Inbox</h4>
+              <div class="chips-mini"><span>All</span><span>Work</span><span>Home</span><span>Ideas</span></div>
+              <div class="row"><span class="box"></span><span><small>To-do · Work</small><b>Send Priya the deck</b></span></div>
+              <div class="row"><span class="box done"></span><span><small>To-do · Home</small><b>Buy oat milk</b></span></div>
+              <div class="row"><span class="box"></span><span><small>Idea</small><b>Podcast on walking meetings</b></span></div>
+              <div class="row"><span class="box"></span><span><small>Note · Class</small><b>Lecture 6: key dates</b></span></div>
+              <span class="ph-label">Screenshot placeholder</span>
+              <span class="homebar"></span>
+            </div>
+          </div>
+          <span class="cap"><span>Sort / 03</span><em>Placeholder</em></span>
+        </a>
+        <a href="#reminders" style="--i:3;--z:3" aria-label="Reminder scheduling sheet">
+          <div class="phone" data-screenshot="1" aria-hidden="true">
+            <div class="scr s-remind">
+              <span class="island"></span>
+              <div class="status"><span>9:41</span><i><b></b><b></b><b></b><s></s></i></div>
+              <div class="bubble">&ldquo;<mark>Remind me Friday</mark> to send Priya the deck.&rdquo;</div>
+              <div class="sheet">
+                <div class="grab"></div>
+                <small>Reminder</small>
+                <strong>Send Priya the deck</strong>
+                <div class="line"><span>Friday</span><span>9:00</span></div>
+                <div class="line"><span>Apple Reminders</span><span class="toggle"></span></div>
+                <div class="go">Schedule</div>
+              </div>
+              <span class="homebar"></span>
+            </div>
+          </div>
+          <span class="cap"><span>Remind / 04</span><em>Placeholder</em></span>
+        </a>
+        <a href="#private" style="--i:4;--z:1" aria-label="Smart folders">
+          <div class="phone" data-screenshot="1" aria-hidden="true">
+            <div class="scr s-folders">
+              <span class="island"></span>
+              <div class="status"><span>9:41</span><i><b></b><b></b><b></b><s></s></i></div>
+              <h4>Folders</h4>
+              <div class="fold-grid">
+                <div><b>Work</b><span>24</span></div>
+                <div><b>Home</b><span>11</span></div>
+                <div><b>Ideas</b><span>17</span></div>
+                <div><b>Class</b><span>8</span></div>
+              </div>
+              <div class="ondevice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Transcribed on this iPhone</div>
+              <span class="homebar"></span>
+            </div>
+          </div>
+          <span class="cap"><span>Folders / 05</span><em>Placeholder</em></span>
+        </a>
+      </div>
+
+      <h1 id="hero-title">Say it once.<br>Loopnote keeps it.</h1>
+      <p class="lead">Loopnote turns your voice memos into organized notes and reminders, transcribed privately on your iPhone.</p>
+      <div class="actions">
+        <a class="btn" href="#download">
+          <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download on the App Store
+        </a>
+        <a class="btn outline" href="#features">See how it works<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+      <p class="hero-note">Free to start · Loopnote Pro includes a 7-day free trial</p>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="section" aria-labelledby="index-title">
+      <div class="section-head">
+        <div><h2 id="index-title">Follow the loop.</h2></div>
+        <p class="muted">From a thought said out loud to a note, a to-do or a reminder that turns up on time.</p>
+      </div>
+      <div class="topic-index">
+        <a href="#capture"><span>01</span><span class="ti">One-tap capture<small>Lock Screen, Action Button, Apple Watch</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#organize"><span>02</span><span class="ti">Notes that sort themselves<small>Transcribed and filed into smart folders</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#reminders"><span>03</span><span class="ti">Reminders that know when<small>Apple Reminders and Calendar</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#private"><span>04</span><span class="ti">Private by design<small>Audio never leaves the phone</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#pricing"><span>05</span><span class="ti">Free and Pro<small>$4.99 a month or $39.99 a year</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a href="#faq"><span>06</span><span class="ti">Questions, answered<small>Privacy, trials, Family Sharing</small></span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="section-head">
+        <div><h2 id="features-title">In focus.</h2></div>
+        <p class="muted">Two features that do the work while you get on with your day.</p>
+      </div>
+      <div class="grid two">
+        <article class="card" id="capture">
+          <div class="card-image">
+            <div class="scene cap-scene" role="img" aria-label="Illustration: the Lock Screen widget, the iPhone Action Button and an Apple Watch, each able to start a recording">
+              <div><div class="cap-widget"><div class="t">9:41</div><div class="w"><i></i><b>Tap to<br>record</b></div></div><div class="tag">Lock Screen</div></div>
+              <div><div class="cap-side"></div><div class="tag">Action Button</div></div>
+              <div><div class="cap-watch"><div class="face"><i></i></div></div><div class="tag" style="margin-top:9cqw">Apple Watch</div></div>
+            </div>
+          </div>
+          <div class="card-meta"><span>Capture</span><span>01</span></div>
+          <h3>One tap, from wherever you are.</h3>
+          <p>Record from the Lock Screen widget, the Action Button or your Apple Watch. There is no app to open and nothing to find first, so the thought is saved before it slips away.</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Lock Screen widget</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Action Button shortcut</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Apple Watch app (Pro)</li>
+          </ul>
+        </article>
+        <article class="card" id="organize">
+          <div class="card-image">
+            <div class="scene org-scene" role="img" aria-label="Illustration: a voice memo transcript becoming a to-do, a note and an idea, each filed in a folder">
+              <div class="memo">
+                <div class="wv"><b style="--h:40"></b><b style="--h:80"></b><b style="--h:55"></b><b style="--h:95"></b><b style="--h:35"></b><b style="--h:70"></b><b style="--h:50"></b><b style="--h:85"></b><b style="--h:30"></b><b style="--h:60"></b><b style="--h:45"></b><b style="--h:75"></b></div>
+                <p>&ldquo;Send Priya the deck Friday. Lecture six dates are on the board. Maybe a podcast on walking meetings?&rdquo;</p>
+              </div>
+              <svg class="org-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h18M15 6l6 6-6 6"/></svg>
+              <div class="stack">
+                <div><small>To-do · Work</small><b>Send Priya the deck</b></div>
+                <div><small>Note · Class</small><b>Lecture 6 key dates</b></div>
+                <div><small>Idea</small><b>Walking meetings podcast</b></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-meta"><span>Transcribe &amp; organize</span><span>02</span></div>
+          <h3>Memos that sort themselves.</h3>
+          <p>On-device transcription turns a rambling memo into clean notes, to-dos and ideas, then files each one into a smart folder. You speak in one long breath; Loopnote does the tidying.</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Notes, to-dos and ideas split apart</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Smart folders that fill themselves</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Transcribed on your iPhone</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <section class="story wrap" id="reminders" aria-labelledby="reminders-title">
+    <div class="story-intro">
+      <p class="eyebrow">Reminders / 03</p>
+      <h2 id="reminders-title">Reminders that know when.</h2>
+      <p class="lead">Say &ldquo;remind me Friday&rdquo; and Loopnote schedules it, in sync with Apple Reminders and Calendar.</p>
+    </div>
+    <div class="card-meta"><span>Feature story</span><span>1 min read</span></div>
+    <div class="article-hero">
+      <div class="scene rem-scene" role="img" aria-label="Illustration: a week calendar with Friday highlighted and a 9:00 reminder to send the deck, next to the spoken phrase that created it">
+        <div class="week">
+          <div class="mo">October, week 40</div>
+          <div class="days">
+            <div>Mon<b>28</b></div><div>Tue<b>29</b></div><div>Wed<b>30</b></div><div>Thu<b>1</b></div><div class="on">Fri<b>2</b></div><div>Sat<b>3</b></div><div>Sun<b>4</b></div>
+          </div>
+          <div class="slots">
+            <div><span>8:00</span><span>School run</span></div>
+            <div class="on"><span>9:00</span><span>Send Priya the deck</span></div>
+            <div><span>12:30</span><span>Lunch with Sam</span></div>
+          </div>
+        </div>
+        <div class="say">&ldquo;<mark>Remind me Friday</mark> to send Priya the deck.&rdquo;<small>Said on Wednesday, 8:12</small></div>
+      </div>
+    </div>
+    <article class="article-body">
+      <p>Most reminders are lost in the gap between thinking of something and finding the right app to write it down. Loopnote closes that gap. When a memo mentions a time (Friday, tomorrow morning, after school), it becomes a reminder with that time already set.</p>
+      <blockquote>You say when. Loopnote puts it there.</blockquote>
+      <p>Reminders sync with Apple Reminders and Calendar, so they show up alongside everything else you already plan. Nothing new to check and no second inbox. Smart reminders are part of Loopnote Pro.</p>
+    </article>
+  </section>
+
+  <div class="wrap">
+    <section class="section" id="private" aria-labelledby="private-title">
+      <div class="section-head">
+        <div><h2 id="private-title">Private by design.</h2></div>
+        <p class="muted">Four decisions that shape how Loopnote treats what you say.</p>
+      </div>
+      <div class="ff-cols">
+        <div class="ff-col"><span class="ff-num">01</span><h3>Transcribed on your iPhone</h3><p>Speech becomes text on the device itself. Your audio never leaves the phone to be processed.</p></div>
+        <div class="ff-col"><span class="ff-num">02</span><h3>Your notes, your iCloud</h3><p>With Pro, iCloud sync keeps your notes current across your devices through your own Apple account.</p></div>
+        <div class="ff-col"><span class="ff-num">03</span><h3>Fits what you use</h3><p>Reminders land in Apple Reminders and Calendar. Export your notes whenever you like with Pro.</p></div>
+        <div class="ff-col"><span class="ff-num">04</span><h3>One plan, whole family</h3><p>Loopnote Pro works with Family Sharing, so up to six people can use it on one subscription.</p></div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="who-title">
+      <div class="section-head">
+        <div><h2 id="who-title">For people who think out loud.</h2></div>
+        <p class="muted">Example memos, and what Loopnote makes of them.</p>
+      </div>
+      <div class="ff-letter-grid">
+        <figure class="ff-letter"><blockquote>&ldquo;Pricing page needs a yearly toggle. Ask Dana about the launch date. Remind me Monday.&rdquo;</blockquote><figcaption><strong>Founders</strong><span>Example memo · 2 to-dos, 1 reminder</span></figcaption></figure>
+        <figure class="ff-letter"><blockquote>&ldquo;Essay due on the twelfth. Chapter four is the one about tides, start there.&rdquo;</blockquote><figcaption><strong>Students</strong><span>Example memo · 1 note, 1 reminder</span></figcaption></figure>
+        <figure class="ff-letter"><blockquote>&ldquo;Swim kit on Thursdays. Book the dentist. Gift idea: the blue kite from the market.&rdquo;</blockquote><figcaption><strong>Parents</strong><span>Example memo · 2 to-dos, 1 idea</span></figcaption></figure>
+        <figure class="ff-letter"><blockquote>&ldquo;Idea for the talk: open with the broken bike story. Call the garage at nine.&rdquo;</blockquote><figcaption><strong>Commuters</strong><span>Example memo · 1 idea, 1 reminder</span></figcaption></figure>
+      </div>
+    </section>
+
+    <section class="section" id="pricing" aria-labelledby="pricing-title">
+      <div class="section-head">
+        <div><h2 id="pricing-title">Free to start. Pro when it sticks.</h2></div>
+        <p class="muted">Every plan includes on-device transcription. Pro starts with a 7-day free trial.</p>
+      </div>
+      <div class="billing" role="group" aria-label="Billing period">
+        <button type="button" data-billing="monthly" aria-pressed="false">Monthly</button>
+        <button type="button" data-billing="yearly" aria-pressed="true">Yearly <em>save 33%</em></button>
+      </div>
+      <div class="plans">
+        <div class="price-card">
+          <p class="eyebrow">Free</p>
+          <h3>Loopnote</h3>
+          <p class="price">$0</p>
+          <p class="unit muted">Free forever</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>20 memos a month</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>On-device transcription</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Basic folders</li>
+          </ul>
+          <a class="btn outline" href="#download">Download free</a>
+        </div>
+        <div class="price-card featured">
+          <p class="eyebrow">Pro · 7-day free trial</p>
+          <h3>Loopnote Pro</h3>
+          <p class="price" aria-live="polite"><span data-price>$39.99</span> <small data-per>/ year</small></p>
+          <p class="unit" data-unit>Save 33% compared with monthly</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Unlimited memos</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Smart reminders</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>Apple Watch app</li>
+            <li><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4 10-10"/></svg>iCloud sync and export</li>
+          </ul>
+          <a class="btn light" href="#download">Start free trial</a>
+        </div>
+        <div class="plan-notes">
+          <h3>Good to know</h3>
+          <dl>
+            <dt>Family Sharing</dt><dd>One Pro subscription covers up to six people.</dd>
+            <dt>Free trial</dt><dd>Try Pro for 7 days. Manage or cancel from your Apple account subscriptions.</dd>
+            <dt>Switching plans</dt><dd>Start free and upgrade inside the app whenever you need more.</dd>
+          </dl>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-title">
+      <div class="ff-faq">
+        <div>
+          <h2 id="faq-title">Questions, answered.</h2>
+          <p class="muted">The short version of what people ask before they download.</p>
+          <a class="btn outline" href="#support">Contact support</a>
+        </div>
+        <div class="acc">
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-1" id="faq-1-btn">Does my audio leave my phone?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-1" role="region" aria-labelledby="faq-1-btn" hidden><p>No. Transcription happens on your iPhone, and your audio never leaves the phone to be processed. With Pro, iCloud sync keeps your notes up to date through your own Apple account.</p></div>
+          </div>
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-2" id="faq-2-btn">How do I record without opening the app?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-2" role="region" aria-labelledby="faq-2-btn" hidden><p>Add the Loopnote widget to your Lock Screen, assign Loopnote to the Action Button, or use the Apple Watch app (included with Pro). One tap starts a recording.</p></div>
+          </div>
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-3" id="faq-3-btn">What does the free plan include?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-3" role="region" aria-labelledby="faq-3-btn" hidden><p>20 memos a month, on-device transcription and basic folders. Pro adds unlimited memos, smart reminders, the Watch app, iCloud sync and export.</p></div>
+          </div>
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-4" id="faq-4-btn">How does the Pro free trial work?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-4" role="region" aria-labelledby="faq-4-btn" hidden><p>Pro starts with 7 days free. After that it is $4.99 a month or $39.99 a year. You can manage or cancel the subscription in your Apple account settings.</p></div>
+          </div>
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-5" id="faq-5-btn">Can my family share Pro?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-5" role="region" aria-labelledby="faq-5-btn" hidden><p>Yes. Loopnote Pro supports Family Sharing for up to six people.</p></div>
+          </div>
+          <div class="acc-item">
+            <h3><button class="acc-btn" type="button" aria-expanded="false" aria-controls="faq-6" id="faq-6-btn">Does it work with Apple Reminders and Calendar?<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button></h3>
+            <div class="acc-panel" id="faq-6" role="region" aria-labelledby="faq-6-btn" hidden><p>Yes. When a memo mentions a time, Loopnote schedules the reminder and keeps it in sync with Apple Reminders and Calendar.</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="download-title">
+      <div class="ff-cta" id="download">
+        <div>
+          <p class="eyebrow">Loopnote for iPhone</p>
+          <h2 id="download-title">Say it once.<br>We&rsquo;ll take it from there.</h2>
+          <p>Free to download, with 20 memos a month. Upgrade to Pro for unlimited memos and smart reminders.</p>
+          <div class="ff-cta-actions" style="margin-top:26px">
+            <a class="btn light" href="#download"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Download on the App Store</a>
+            <a class="btn outline" href="#pricing">Compare plans</a>
+          </div>
+          <p class="small-print">iPhone only · In-app purchase for Loopnote Pro</p>
+        </div>
+        <div class="phone cta-phone" data-screenshot="1" aria-hidden="true">
+          <div class="scr s-notes">
+            <span class="island"></span>
+            <div class="status"><span>9:41</span><i><b></b><b></b><b></b><s></s></i></div>
+            <h4>Inbox</h4>
+            <div class="chips-mini"><span>All</span><span>Work</span><span>Home</span></div>
+            <div class="row"><span class="box"></span><span><small>To-do · Work</small><b>Send Priya the deck</b></span></div>
+            <div class="row"><span class="box done"></span><span><small>To-do · Home</small><b>Buy oat milk</b></span></div>
+            <div class="row"><span class="box"></span><span><small>Idea</small><b>Walking meetings</b></span></div>
+            <span class="homebar"></span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="legal" aria-label="Legal and support">
+      <div id="privacy"><h3>Privacy Policy</h3><p>Placeholder: link the full privacy policy here before launch. Audio is transcribed on-device and never leaves the phone.</p></div>
+      <div id="terms"><h3>Terms</h3><p>Placeholder: link the terms of use and the subscription terms for Loopnote Pro here.</p></div>
+      <div id="support"><h3>Support</h3><p>Placeholder: add the support page or contact address that App Store review requires.</p></div>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer wrap">
+  <div class="footer-top">
+    <div>
+      <a class="brand" href="#top">Loopnote</a>
+      <p>Say it once. Loopnote turns your voice memos into organized notes and reminders.</p>
+    </div>
+    <div class="footer-links">
+      <strong>The app</strong>
+      <a href="#features">Features</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">Questions</a>
+      <a href="#download">Download</a>
+    </div>
+    <div class="footer-links">
+      <strong>Legal</strong>
+      <a href="#privacy">Privacy Policy</a>
+      <a href="#terms">Terms</a>
+      <a href="#support">Support</a>
+    </div>
+  </div>
+  <div class="fineprint">
+    <span>&copy; 2026 Loopnote. Fictional placeholder app; screens are placeholders.</span>
+    <span>Apple, iPhone, Apple Watch and App Store are trademarks of Apple Inc.</span>
+  </div>
+</footer>
+
+<script>
+(function () {
+  var header = document.querySelector('.site-header');
+  var toggle = document.querySelector('.nav-toggle');
+  var nav = document.getElementById('site-nav');
+
+  function setMenu(open) {
+    toggle.setAttribute('aria-expanded', String(open));
+    toggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    nav.classList.toggle('open', open);
+  }
+  toggle.addEventListener('click', function () {
+    setMenu(toggle.getAttribute('aria-expanded') !== 'true');
+  });
+  nav.addEventListener('click', function (e) { if (e.target.closest('a')) setMenu(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && nav.classList.contains('open')) { setMenu(false); toggle.focus(); }
+  });
+
+  function onScroll() { header.classList.toggle('is-stuck', window.scrollY > 24); }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // Highlight the nav link for the section in view.
+  var links = Array.prototype.slice.call(nav.querySelectorAll('a'));
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        links.forEach(function (a) {
+          if (a.getAttribute('href') === '#' + en.target.id) a.setAttribute('aria-current', 'true');
+          else a.removeAttribute('aria-current');
+        });
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    links.forEach(function (a) {
+      var t = document.querySelector(a.getAttribute('href'));
+      if (t) io.observe(t);
+    });
+  }
+
+  // Billing toggle.
+  var plans = {
+    monthly: { price: '$4.99', per: '/ month', unit: 'Billed monthly, cancel anytime' },
+    yearly: { price: '$39.99', per: '/ year', unit: 'Save 33% compared with monthly' }
+  };
+  var billBtns = document.querySelectorAll('[data-billing]');
+  billBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var p = plans[btn.getAttribute('data-billing')];
+      billBtns.forEach(function (b) { b.setAttribute('aria-pressed', String(b === btn)); });
+      document.querySelector('[data-price]').textContent = p.price;
+      document.querySelector('[data-per]').textContent = p.per;
+      document.querySelector('[data-unit]').textContent = p.unit;
+    });
+  });
+
+  // FAQ accordion: one panel open at a time.
+  var accBtns = document.querySelectorAll('.acc-btn');
+  accBtns.forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var open = btn.getAttribute('aria-expanded') === 'true';
+      accBtns.forEach(function (b) {
+        b.setAttribute('aria-expanded', 'false');
+        document.getElementById(b.getAttribute('aria-controls')).hidden = true;
+      });
+      if (!open) {
+        btn.setAttribute('aria-expanded', 'true');
+        document.getElementById(btn.getAttribute('aria-controls')).hidden = false;
+      }
+    });
+  });
+})();
+</script>
+</body>
+</html>
