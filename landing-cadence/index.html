@@ -1,0 +1,1311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Loopnote &mdash; Say it once</title>
+<meta name="description" content="Loopnote turns your voice memos into organized notes and reminders. On-device transcription for iPhone and Apple Watch.">
+<style>
+/* ============ tokens ============ */
+:root{
+  --bg:#08090A;
+  --accent:#39C3EF; --accent-deep:#06b6d4;
+  --n950:#0a0a0a; --n900:#171717; --n800:#262626; --n700:#404040;
+  --n600:#525252; --n500:#737373; --n400:#a3a3a3; --n300:#d4d4d4; --n200:#e5e5e5;
+  --panel:rgba(40,40,40,.30); --line:rgba(255,255,255,.10);
+  --star:#facc15;
+  --inset-card:2px 4px 16px 0 rgba(248,248,248,.06) inset;
+  --inset-orb:0 0 8px 0 rgba(248,248,248,.25) inset,0 32px 24px -16px rgba(0,0,0,.40);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:#fff;
+  font-family:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;line-height:1.5;overflow-x:hidden;
+}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+.ic{flex:none;vertical-align:middle}
+.wrap{max-width:80rem;margin:0 auto;padding:0 1rem}
+
+/* gradient headings */
+.grad-h{
+  background:linear-gradient(to bottom,var(--n800),#fff 55%,#fff);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+  text-align:center;letter-spacing:-.02em;font-weight:500;
+  max-width:64rem;margin:0 auto;
+}
+h2.grad-h{font-size:clamp(1.875rem,4vw,3rem);line-height:1.15}
+.sub{
+  color:var(--n400);text-align:center;font-weight:400;
+  font-size:clamp(.875rem,1.4vw,1rem);max-width:42rem;margin:1rem auto 0;
+}
+
+/* buttons */
+.btn{
+  position:relative;z-index:10;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  border-radius:.375rem;padding:.5rem 1rem;font-size:.875rem;font-weight:500;
+  transition:transform .2s,background-color .2s,opacity .2s;border:1px solid transparent;white-space:nowrap;
+}
+.btn-primary{
+  background:var(--accent);color:#000;border-color:var(--accent);
+  box-shadow:0 -1px 0 0 rgba(255,255,255,.38) inset,0 1px 0 0 rgba(255,255,255,.38) inset;
+}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-primary:active{transform:scale(.98)}
+.btn-muted{background:var(--n800);color:#fff;box-shadow:0 1px 0 0 rgba(255,255,255,.12) inset}
+.btn-muted:hover{background:var(--n900)}
+.btn-simple{background:transparent;color:#fff}
+.btn-simple:hover{border-color:var(--accent);background:rgba(57,195,239,.5)}
+.btn-lg{padding:.65rem 1.4rem;font-size:1.05rem}
+.btn .arr{transition:transform .2s}
+.btn:hover .arr{transform:translateX(4px)}
+
+/* ambient diagonal light shafts */
+.ambient{position:absolute;top:0;left:0;width:100vw;height:100vh;z-index:40;pointer-events:none}
+.ambient i{position:absolute;top:0;left:0;display:block}
+.ambient i:nth-child(1){
+  width:560px;height:1380px;transform:translateY(-350px) rotate(-45deg);
+  background:radial-gradient(68.54% 68.72% at 55.02% 31.46%,hsla(0,0%,85%,.08) 0,hsla(0,0%,55%,.02) 50%,hsla(0,0%,45%,0) 80%);
+}
+.ambient i:nth-child(2){
+  width:240px;height:1380px;transform:rotate(-45deg) translate(5%,-50%);transform-origin:top left;
+  background:radial-gradient(50% 50% at 50% 50%,hsla(0,0%,85%,.06) 0,hsla(0,0%,45%,.02) 80%,transparent 100%);
+}
+.ambient i:nth-child(3){
+  width:240px;height:1380px;border-radius:20px;transform:rotate(-45deg) translate(-180%,-70%);transform-origin:top left;
+  background:radial-gradient(50% 50% at 50% 50%,hsla(0,0%,85%,.04) 0,hsla(0,0%,45%,.02) 80%,transparent 100%);
+}
+
+/* reveal motion */
+.rv{opacity:0;transform:translateY(22px);transition:opacity .6s cubic-bezier(.22,1,.36,1),transform .6s cubic-bezier(.22,1,.36,1);transition-delay:var(--d,0s)}
+.rv.in{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){
+  .rv{opacity:1;transform:none;transition:none}
+  html{scroll-behavior:auto}
+  *{animation-duration:.001s !important;animation-iteration-count:1 !important}
+}
+
+/* ============ nav ============ */
+.nav{position:fixed;inset:0 0 auto 0;z-index:100;padding:.75rem 1rem}
+.nav-pill{
+  max-width:80rem;margin:0 auto;display:flex;align-items:center;justify-content:space-between;
+  padding:.6rem 1rem;border-radius:999px;background:transparent;
+  transition:max-width .4s ease,background-color .4s ease,box-shadow .4s ease;
+}
+.nav.scrolled .nav-pill{max-width:56rem;background:var(--n900);box-shadow:0 10px 30px -18px rgba(0,0,0,.8)}
+.brand{display:flex;align-items:center;gap:.5rem;font-weight:700;font-size:.95rem}
+.brand-mark{width:1.65rem;height:1.65rem;border-radius:999px;background:#fff;display:flex;align-items:center;justify-content:center;color:#111B21}
+.nav-links{display:none;align-items:center;gap:.25rem}
+.nav-links a{
+  display:inline-flex;padding:.5rem 1rem;border-radius:.375rem;font-size:.875rem;color:#fff;
+  transition:background-color .2s,box-shadow .2s;
+}
+.nav-links a:hover{background:var(--n800);color:rgba(255,255,255,.8);box-shadow:0 1px 0 0 rgba(255,255,255,.12) inset}
+.nav-right{display:none;align-items:center;gap:.5rem}
+.nav-burger{display:inline-flex;padding:.4rem}
+@media (min-width:768px){
+  .nav-links,.nav-right{display:flex}
+  .nav-burger{display:none}
+}
+.mnav{
+  display:none;position:fixed;top:4.4rem;left:1rem;right:1rem;z-index:99;
+  background:var(--n900);border:1px solid var(--line);border-radius:1rem;padding:.75rem;
+}
+.mnav.open{display:block}
+.mnav a{display:block;padding:.65rem .75rem;border-radius:.5rem;font-size:.95rem}
+.mnav a:hover{background:var(--n800)}
+@media (min-width:768px){.mnav{display:none !important}}
+
+/* ============ hero ============ */
+.hero{position:relative;overflow:hidden;padding-top:8.5rem;display:flex;flex-direction:column}
+.hero h1{
+  font-size:clamp(2.5rem,7.2vw,6rem);font-weight:600;line-height:1.05;
+  padding:1.5rem 0;position:relative;z-index:10;
+}
+.hero .sub{position:relative;z-index:10;max-width:48rem;font-size:clamp(1rem,1.6vw,1.25rem)}
+.social-proof{display:flex;flex-direction:column;align-items:center;margin:2.5rem 0 0}
+.ava-row{display:flex;align-items:center}
+.ava{
+  width:3.5rem;height:3.5rem;border-radius:1rem;border:2px solid var(--n200);
+  display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.05rem;
+  margin-right:-1rem;position:relative;transition:transform .2s;
+}
+.ava:hover{transform:scale(1.06);z-index:5}
+.stars{display:flex;margin-left:1.5rem}
+.star{width:1rem;height:1rem;color:var(--star);margin:0 .25rem}
+.proof-line{color:var(--n400);font-size:.875rem;margin-top:.75rem;position:relative;z-index:10}
+.hero-cta{display:flex;justify-content:center;gap:1rem;margin:2.5rem 0;position:relative;z-index:10}
+@media (max-width:640px){.ava-row + .stars{margin-left:.5rem}}
+
+/* hero 3D dashboard */
+.stage{display:flex;justify-content:center;position:relative;padding:1rem;perspective:1000px}
+@media (min-width:768px){.stage{padding:2rem 5rem 6rem}}
+.tilt-card{
+  width:100%;max-width:72rem;margin:0 auto;position:relative;isolation:isolate;
+  border:4px solid var(--n900);background:var(--bg);border-radius:30px;padding:.5rem;
+  height:21rem;transform-style:preserve-3d;will-change:transform;
+  box-shadow:0 0 rgba(0,0,0,.3),0 9px 20px rgba(0,0,0,.29),0 37px 37px rgba(0,0,0,.26),0 84px 50px rgba(0,0,0,.15),0 149px 60px rgba(0,0,0,.04);
+}
+@media (min-width:768px){.tilt-card{height:44rem;padding:1rem}}
+.tilt-fade{
+  position:absolute;left:0;right:0;bottom:-1px;height:10rem;z-index:20;pointer-events:none;
+  background:linear-gradient(to top,var(--bg) 30%,transparent);border-radius:0 0 26px 26px;
+}
+.tilt-inner{height:100%;width:100%;overflow:hidden;border-radius:1rem;filter:grayscale(1);transition:filter .3s}
+.tilt-card:hover .tilt-inner{filter:grayscale(0)}
+.play-wrap{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center}
+.play-btn{
+  width:4rem;height:4rem;border-radius:999px;background:rgba(8,9,10,.72);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;color:#fff;backdrop-filter:blur(4px);
+  transition:transform .2s,background-color .2s;
+}
+.play-btn:hover{transform:scale(1.08);background:rgba(8,9,10,.9)}
+
+/* meteor beam */
+.meteor{position:absolute;top:-4px;left:0;z-index:40;height:2px;width:2px;border-radius:999px;background:#1d4ed8;box-shadow:0 0 0 1px rgba(255,255,255,.06);animation:meteor var(--mdur,3s) linear infinite;animation-delay:var(--mdel,0s)}
+.meteor::before{
+  content:"";position:absolute;top:50%;transform:translateY(-50%);
+  width:var(--mw,90px);height:1px;
+  background:linear-gradient(90deg,transparent,#3b82f6,var(--accent));
+}
+@keyframes meteor{0%{left:0;opacity:0}12%{opacity:1}85%{opacity:1}100%{left:100%;opacity:0}}
+
+/* CSS dashboard mockup */
+.dash{display:flex;height:100%;width:100%;background:#0c0d0f;border-radius:1rem;overflow:hidden;border:1px solid rgba(255,255,255,.06);font-size:.72rem}
+.dash-side{display:none;width:12rem;flex-direction:column;gap:.25rem;border-right:1px solid rgba(255,255,255,.06);padding:.9rem .6rem;background:#0a0b0d}
+@media (min-width:768px){.dash-side{display:flex}}
+.dash-side .dbrand{display:flex;align-items:center;gap:.45rem;font-weight:700;font-size:.8rem;padding:.25rem .4rem;margin-bottom:.75rem}
+.dash-side .dbrand span.mk{width:1.1rem;height:1.1rem;border-radius:999px;background:#fff;color:#111B21;display:flex;align-items:center;justify-content:center}
+.drow{display:flex;align-items:center;gap:.5rem;padding:.45rem .55rem;border-radius:.4rem;color:var(--n400)}
+.drow.on{background:rgba(57,195,239,.12);color:#fff}
+.dash-main{flex:1;display:flex;flex-direction:column;min-width:0}
+.dash-top{display:flex;align-items:center;gap:.5rem;padding:.7rem .9rem;border-bottom:1px solid rgba(255,255,255,.06)}
+.dot{width:.55rem;height:.55rem;border-radius:999px;background:var(--n700)}
+.dot:nth-child(1){background:#4b5563}.dot:nth-child(2){background:#6b7280}.dot:nth-child(3){background:#9ca3af}
+.addr{margin:0 auto;background:#111316;border:1px solid rgba(255,255,255,.07);border-radius:.4rem;padding:.2rem 1.2rem;color:var(--n500)}
+.dash-body{flex:1;display:grid;grid-template-rows:auto 1fr auto;gap:.9rem;padding:.9rem;min-height:0}
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.kpi{background:#101216;border:1px solid rgba(255,255,255,.06);border-radius:.55rem;padding:.6rem .7rem}
+.kpi b{display:block;font-size:1rem;color:#fff}
+.kpi span{color:var(--n500)}
+.kpi em{font-style:normal;color:var(--accent);margin-left:.35rem;font-size:.65rem}
+.chart{display:flex;align-items:flex-end;gap:.35rem;background:#101216;border:1px solid rgba(255,255,255,.06);border-radius:.55rem;padding:.8rem;min-height:6rem}
+.chart i{flex:1;display:block;background:linear-gradient(to top,rgba(57,195,239,.25),var(--accent));border-radius:.2rem .2rem 0 0;min-height:8%}
+.trows{display:flex;flex-direction:column;gap:.45rem;overflow:hidden;min-height:0}
+.tilt-inner .dash-body{grid-template-rows:auto minmax(0,15rem) minmax(0,1fr)}
+.trow{display:flex;align-items:center;gap:.6rem;background:#101216;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.5rem .7rem;color:var(--n400)}
+.trow .tag{margin-left:auto;border-radius:999px;padding:.1rem .5rem;font-size:.62rem;border:1px solid rgba(57,195,239,.4);color:var(--accent)}
+.trow .tag.gray{border-color:rgba(255,255,255,.15);color:var(--n500)}
+.mono{width:1.3rem;height:1.3rem;border-radius:999px;display:flex;align-items:center;justify-content:center;font-size:.6rem;font-weight:700;color:#fff}
+
+/* ============ section headers / 3D icon chip ============ */
+.sec{position:relative;padding:5rem 1rem}
+@media (min-width:768px){.sec{padding:8rem 1rem}}
+.chip3d-wrap{perspective:400px}
+.chip3d{
+  width:3.5rem;height:3.5rem;padding:4px;border-radius:.375rem;margin:0 auto;position:relative;
+  background:linear-gradient(to bottom,var(--n800),var(--n950));
+  transform:rotateX(25deg);transform-origin:center;
+}
+.chip3d-inner{position:relative;z-index:20;height:100%;width:100%;border-radius:5px;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--accent-deep)}
+.chip3d::before{content:"";position:absolute;left:0;right:0;bottom:0;height:1rem;border-radius:999px;background:var(--n600);opacity:.5;filter:blur(12px)}
+.chip3d::after{
+  content:"";position:absolute;left:20%;right:20%;bottom:0;height:1px;
+  background:linear-gradient(to right,transparent,var(--accent-deep),transparent);
+  box-shadow:0 0 8px 2px rgba(6,182,212,.5);
+}
+
+/* ============ features bento ============ */
+#features{background:radial-gradient(ellipse 80% 50% at 50% 0%,rgba(38,42,50,.35),transparent)}
+.bento{display:grid;grid-template-columns:1fr;gap:.65rem;padding:2.5rem 0;max-width:64rem;margin:0 auto}
+@media (min-width:1024px){.bento{grid-template-columns:repeat(3,1fr)}.b-span2{grid-column:span 2}}
+.bcard{
+  padding:2rem;border-radius:.75rem;border:1px solid var(--line);
+  background:var(--panel);box-shadow:var(--inset-card);overflow:hidden;position:relative;
+}
+.bcard h3{font-size:1.125rem;font-weight:600;padding:.5rem 0;color:#fff}
+.bcard p{font-size:.875rem;color:var(--n400);max-width:24rem}
+.vig{height:17rem;border-radius:.75rem;position:relative;overflow:hidden;margin-top:.5rem;
+  background:var(--panel);
+  -webkit-mask-image:radial-gradient(60% 60% at 50% 50%,#fff 0%,transparent 100%);
+  mask-image:radial-gradient(60% 60% at 50% 50%,#fff 0%,transparent 100%);
+}
+.vig.nomask{-webkit-mask-image:none;mask-image:none;background:transparent}
+.orb{
+  border-radius:999px;display:flex;align-items:center;justify-content:center;
+  background:rgba(248,248,248,.01);box-shadow:var(--inset-orb);color:var(--n300);
+}
+/* vignette 1: channels */
+.chan{display:flex;flex-direction:column;gap:1.1rem;align-items:center;justify-content:center;height:100%;position:relative}
+.chan-row{display:flex;gap:1rem}
+.chan-row:nth-child(3){margin-left:2.5rem}
+.chan .orb{width:3rem;height:3rem}
+.chan svg.wire{position:absolute;color:var(--n600)}
+.wirepulse{stroke-dasharray:60 240;animation:wire 3.2s linear infinite}
+@keyframes wire{from{stroke-dashoffset:300}to{stroke-dashoffset:0}}
+/* vignette 2: graph */
+.graphv{position:relative;height:100%;display:flex;align-items:center;justify-content:center;padding:1.5rem}
+.graphv .pill{
+  position:absolute;left:2rem;top:2rem;border-radius:999px;padding:.45rem 1rem;font-size:.75rem;color:#fff;
+  box-shadow:0 0 8px 0 rgba(248,248,248,.25) inset,0 32px 24px -16px rgba(0,0,0,.4) inset;
+}
+.graphv svg{max-width:100%;color:var(--n600)}
+.gpulse{stroke-dasharray:120 600;animation:wire 4s linear infinite}
+/* vignette 3: AI orbs */
+.aiv{position:relative;height:100%;display:flex;align-items:center;justify-content:center;gap:.6rem}
+.aiv .orb{animation:bob 3.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.scan{
+  position:absolute;top:50%;left:50%;height:11rem;width:1px;transform:translate(-50%,-50%);
+  background:linear-gradient(to bottom,transparent,var(--accent),transparent);
+  animation:scan 5s linear infinite alternate;
+}
+@keyframes scan{from{margin-left:-120px}to{margin-left:120px}}
+.spark{position:absolute;width:2px;height:2px;border-radius:999px;background:#fff;opacity:0;animation:tw 2.4s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes tw{0%,100%{opacity:0;transform:scale(.4)}50%{opacity:.9;transform:scale(1)}}
+/* vignette 4: pipeline */
+.pipev{position:relative;height:100%;overflow:hidden;padding:2rem 1rem}
+.pipebg{position:absolute;inset:0;display:flex;justify-content:center;gap:1.35rem;pointer-events:none}
+.pipebg i{display:flex;flex-direction:column;align-items:center}
+.pipebg i::before{
+  content:"";width:.7rem;height:.7rem;border-radius:999px;flex:none;
+  border:1px solid rgba(255,255,255,.2);background:rgba(248,248,248,.02);
+  box-shadow:2px 4px 16px 0 rgba(248,248,248,.06) inset;
+}
+.pipebg i::after{content:"";width:1px;flex:1;background:linear-gradient(to bottom,rgba(255,255,255,.14),transparent)}
+.chipbox{position:relative;z-index:2;width:fit-content;padding:2px;border-radius:.5rem;border:1px solid var(--n600);transition:border-color .2s,transform .2s}
+.chipbox > span{
+  display:flex;align-items:center;height:2.5rem;padding:0 .75rem;border-radius:5px;font-size:.75rem;color:var(--n400);
+  background:rgba(248,248,248,.01);box-shadow:var(--inset-orb);
+}
+.chipbox.c2{margin:1rem 0 0 2.5rem}
+.chipbox.c3{margin:1rem 0 0 1rem}
+.bcard:hover .chipbox.c2{border-color:var(--accent);transform:scale(1.02)}
+.cur{position:absolute;transition:all .25s;z-index:3}
+.cur svg{width:1rem;height:1rem}
+.cur span{position:absolute;top:.8rem;left:.8rem;padding:.15rem .3rem;font-size:10px;white-space:nowrap;color:var(--n500);transition:color .2s}
+.cur.a{top:5rem;left:10rem}.bcard:hover .cur.a{left:8rem}
+.bcard:hover .cur.a span{color:var(--accent)}
+.cur.b{top:12rem;left:3rem}.bcard:hover .cur.b{top:9.5rem;left:8rem}
+.bcard:hover .cur.b span{color:#fff}
+/* vignette 5: profiles */
+.profv{position:relative;height:100%;overflow:hidden}
+.prof{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:transform .3s}
+.prof .frame{width:5rem;height:5rem;border-radius:.5rem;display:flex;align-items:center;justify-content:center;background:rgba(248,248,248,.01);box-shadow:var(--inset-orb)}
+.prof .frame .mono{width:3.6rem;height:3.6rem;border-radius:.4rem;font-size:1.2rem}
+.prof b{margin-top:.8rem;font-size:.875rem;color:var(--n400)}
+.prof .meta{display:flex;align-items:center;gap:.5rem;font-size:.75rem;margin-top:.8rem;color:var(--n300)}
+.prof .meta i{width:.25rem;height:.25rem;border-radius:999px;background:var(--n400)}
+.prof svg{margin-top:.6rem;max-width:100%;color:#F8F8F8}
+.prof.p2{transform:translateY(110%)}
+.bcard:hover .prof.p1{transform:translateY(-110%)}
+.bcard:hover .prof.p2{transform:translateY(0)}
+
+/* ============ tools showcase ============ */
+.tool-row{
+  display:grid;grid-template-columns:1fr;gap:2.5rem;align-items:center;
+  max-width:72rem;margin:0 auto;padding:4rem 1.5rem;
+}
+@media (min-width:1024px){.tool-row{grid-template-columns:1fr 2fr;padding:6rem 2.5rem}}
+.tool-txt .ticon{color:var(--accent);margin-bottom:.6rem}
+.tool-txt h3{
+  font-size:clamp(1.5rem,3vw,2.25rem);font-weight:700;
+  background:linear-gradient(to bottom,#fff,#fff);-webkit-background-clip:text;background-clip:text;
+}
+.tool-txt p{color:var(--n500);font-weight:600;font-size:1.05rem;max-width:24rem;margin-top:.5rem}
+.tool-frame{
+  padding:1rem;background:#18181b;border:1px solid #27272a;border-radius:.5rem;position:relative;
+  box-shadow:0 25px 50px -12px rgba(0,0,0,.6);
+}
+.tool-frame::after{
+  content:"";position:absolute;left:0;right:0;bottom:0;height:1px;
+  background:linear-gradient(to right,transparent,var(--accent),transparent);
+}
+.tool-frame::before{
+  content:"";position:absolute;left:2.5rem;bottom:0;width:10rem;height:1px;z-index:1;
+  background:linear-gradient(to right,transparent,#6366f1,transparent);
+}
+.tool-frame .dash{height:20rem;border-radius:.5rem}
+@media (min-width:768px){.tool-frame .dash{height:24rem}}
+/* mockup variants */
+.flow{flex:1;display:flex;align-items:center;justify-content:center;gap:2.2rem;padding:1rem;position:relative}
+.node{width:7.5rem;background:#101216;border:1px solid rgba(255,255,255,.08);border-radius:.55rem;padding:.55rem .6rem;color:var(--n400);position:relative;z-index:2}
+.node b{display:flex;align-items:center;gap:.35rem;color:#fff;font-size:.7rem;margin-bottom:.2rem}
+.node.on{border-color:rgba(57,195,239,.45);box-shadow:0 0 18px -6px rgba(57,195,239,.45)}
+.flow-line{position:absolute;top:50%;left:12%;right:12%;height:1px;background:rgba(255,255,255,.12)}
+.flow-line::after{content:"";position:absolute;top:-1px;left:0;height:3px;width:2.2rem;border-radius:999px;background:linear-gradient(90deg,transparent,var(--accent));animation:dashx 2.6s linear infinite}
+@keyframes dashx{from{left:0}to{left:100%}}
+.formrows{flex:1;display:flex;flex-direction:column;gap:.55rem;padding:1rem}
+.formrow{background:#101216;border:1px solid rgba(255,255,255,.06);border-radius:.5rem;padding:.55rem .7rem;color:var(--n400);display:flex;align-items:center;gap:.6rem}
+.formrow .bar{height:.4rem;border-radius:999px;background:var(--n800);flex:1;overflow:hidden}
+.formrow .bar i{display:block;height:100%;border-radius:999px;background:var(--accent);width:var(--w,50%)}
+
+/* ============ testimonials ============ */
+#testimonials{position:relative;overflow:hidden}
+.t-backdrop{
+  position:absolute;inset:0;opacity:.45;pointer-events:none;
+  -webkit-mask-image:radial-gradient(circle at center,transparent 12%,#fff 90%);
+  mask-image:radial-gradient(circle at center,transparent 12%,#fff 90%);
+}
+.tgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;max-width:80rem;margin:0 auto;padding:1rem}
+@media (min-width:1024px){.tgrid{grid-template-columns:repeat(4,1fr)}}
+.tcard{
+  padding:1.5rem;border-radius:.75rem;border:1px solid var(--line);
+  background:var(--panel);box-shadow:var(--inset-card);
+}
+.tcard h4{font-size:.9rem;font-weight:600;color:#fff;padding:.5rem 0}
+.tcard .who{display:flex;gap:.6rem;align-items:center;margin-top:1.5rem}
+.tcard .who .mono{width:2.5rem;height:2.5rem;font-size:.8rem}
+.tcard .who b{display:block;font-size:.8rem;color:var(--n300);font-weight:500}
+.tcard .who span{display:block;font-size:.75rem;color:var(--n400)}
+.slider{position:relative;z-index:10;max-width:48rem;margin:0 auto;padding:8rem 1.5rem;text-align:center}
+.halo{
+  position:relative;width:8.5rem;height:8.5rem;margin:0 auto 1.5rem;border-radius:999px;
+  background:radial-gradient(circle at top,rgba(163,163,163,.2),transparent 70%);
+  display:flex;align-items:center;justify-content:center;
+}
+.halo::after{content:"";position:absolute;inset:1px;border-radius:999px;background:var(--n900);z-index:0}
+.halo .mono{width:3.5rem;height:3.5rem;border-radius:999px;position:relative;z-index:1;font-size:1.1rem;
+  opacity:0;transform:rotate(-50deg);transition:opacity .6s cubic-bezier(.68,-.3,.32,1),transform .6s cubic-bezier(.68,-.3,.32,1);position:absolute}
+.halo .mono.on{opacity:1;transform:rotate(0)}
+.sparkfield{position:absolute;left:50%;top:-1.4rem;transform:translateX(-50%);width:18rem;height:4rem;pointer-events:none}
+.quotes{position:relative;min-height:7.5rem}
+.quote{
+  position:absolute;inset:0;opacity:0;transform:translateX(-1rem);transition:opacity .5s,transform .5s;
+  font-weight:700;font-size:clamp(1rem,2vw,1.25rem);
+  background:linear-gradient(to right,rgba(229,229,229,.6),#e5e5e5 50%,rgba(229,229,229,.6));
+  -webkit-background-clip:text;background-clip:text;color:transparent;pointer-events:none;
+}
+.quote.on{opacity:1;transform:none}
+.t-pills{display:flex;justify-content:center;flex-wrap:wrap;gap:.75rem;margin-top:2rem}
+.t-pill{
+  position:relative;border-radius:999px;padding:.35rem .8rem;font-size:.75rem;color:var(--n300);
+  background:linear-gradient(var(--n900),var(--n900)) padding-box,conic-gradient(var(--n400),var(--n700) 25%,var(--n700) 75%,var(--n400) 100%) border-box;
+  border:1px solid transparent;opacity:.7;transition:opacity .2s,border-color .2s;
+}
+.t-pill b{color:#fafafa;font-weight:700;margin-right:.3rem}
+.t-pill.on{opacity:1;border-color:rgba(57,195,239,.5)}
+.t-fade{position:absolute;left:0;right:0;bottom:0;height:10rem;background:linear-gradient(to top,var(--bg),transparent);pointer-events:none;z-index:5}
+
+/* ============ pricing ============ */
+.switch-row{display:flex;justify-content:center;align-items:center;gap:1rem;margin-top:2.5rem}
+.switch-row p{font-size:.875rem;color:var(--n400);transition:color .2s}
+.switch-row p.on{color:#f5f5f5}
+.sw{
+  width:40px;height:20px;padding:0 2px;display:flex;align-items:center;border-radius:999px;cursor:pointer;
+  background:var(--n900);border:1px solid var(--n500);box-shadow:inset 0 0 12px rgba(0,0,0,.25);transition:background-color .2s,border-color .2s;
+}
+.sw.on{background:var(--n700);border-color:transparent}
+.sw i{width:13px;height:13px;border-radius:999px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.4);transition:transform .3s}
+.sw.on i{transform:translateX(19px)}
+.tiers{display:grid;grid-template-columns:1fr;gap:2rem;max-width:80rem;margin:0 auto;padding:4rem 1rem}
+@media (min-width:768px){.tiers{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1024px){.tiers{grid-template-columns:repeat(4,1fr);gap:1rem}}
+.tier{display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;padding:1.5rem;border-radius:.5rem;position:relative;overflow:hidden}
+.tier.featured{background:radial-gradient(circle at top,var(--n900),var(--n950))}
+.tier h3{font-size:1rem;font-weight:400}
+.tier .price{font-size:1.125rem;color:var(--n400);margin-top:1rem;font-weight:500}
+.tier .desc{font-size:.875rem;color:var(--n400);margin-top:1rem}
+.tier ul{list-style:none;margin-top:1rem}
+.tier li{display:flex;gap:.5rem;align-items:flex-start;margin:1rem 0;font-size:.875rem;color:var(--n400)}
+.tier li .ic{color:var(--n300);margin-top:.15rem}
+.tier .btn{margin-top:1rem}
+
+/* logo marquee */
+.marq-wrap{padding:3rem 0 6rem;text-align:center}
+.marq-wrap>p{color:var(--n400);margin-bottom:1.5rem}
+.marq{position:relative;overflow:hidden;max-width:80rem;margin:0 auto;
+  -webkit-mask-image:linear-gradient(to right,transparent,#fff 18%,#fff 82%,transparent);
+  mask-image:linear-gradient(to right,transparent,#fff 18%,#fff 82%,transparent);
+}
+.marq-track{display:flex;align-items:center;gap:5rem;width:max-content;animation:marq 32s linear infinite;padding:.5rem 2.5rem}
+.marq:hover .marq-track{animation-play-state:paused}
+@keyframes marq{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.mark{
+  font-weight:600;font-size:1.05rem;color:var(--n500);white-space:nowrap;display:inline-flex;align-items:center;gap:.4rem;
+  filter:grayscale(1);transition:color .2s,filter .2s;
+}
+.mark:hover{color:var(--n200);filter:grayscale(0)}
+
+/* ============ faq ============ */
+.faq{max-width:48rem;margin:0 auto;padding:5rem 2rem}
+.faq-list{display:grid;gap:1.25rem;padding-top:4rem}
+.qa{background:var(--n900);border-radius:.75rem;overflow:hidden}
+.qa-btn{width:100%;display:flex;justify-content:space-between;align-items:center;gap:1rem;text-align:left;padding:1rem;font-size:1rem;font-weight:700;color:#fff}
+.qa-btn .ic{transition:transform .25s;color:var(--n400)}
+.qa.open .qa-btn .ic{transform:rotate(180deg)}
+.qa-body{max-height:0;overflow:hidden;transition:max-height .25s ease}
+.qa-body p{padding:0 1rem 1rem;font-size:1rem;color:var(--n400)}
+
+/* ============ CTA + macbook ============ */
+.cta{position:relative;overflow:hidden;padding-top:5rem}
+.cta-grid{display:flex;flex-direction:column;align-items:center;gap:2rem;max-width:80rem;margin:0 auto;padding:0 2rem}
+@media (min-width:768px){.cta-grid{flex-direction:row;justify-content:space-between;align-items:center}}
+.cta-copy h2{font-size:clamp(1.25rem,3vw,1.875rem);font-weight:700;max-width:36rem;text-align:center}
+.cta-copy p{max-width:28rem;margin-top:2rem;font-size:.95rem;color:var(--n400);text-align:center}
+@media (min-width:768px){.cta-copy h2,.cta-copy p{text-align:left}}
+.cta .social-proof{align-items:flex-start;margin-top:2rem}
+@media (max-width:767.9px){.cta .social-proof{align-items:center}}
+/* CSS iPhone that rises and turns upright on scroll (replaces the MacBook) */
+.rise{display:flex;justify-content:center;padding:5rem 1rem 0;perspective:900px;overflow:hidden}
+.rise .phone{--pw:min(15rem,62vw);transform-origin:50% 100%;will-change:transform;transform:translateY(90px) rotateX(38deg) rotate(-6deg)}
+.rise-glow{position:absolute;left:50%;bottom:4rem;width:28rem;max-width:90vw;height:14rem;transform:translateX(-50%);border-radius:999px;background:radial-gradient(closest-side,rgba(57,195,239,.18),transparent);filter:blur(20px);pointer-events:none}
+.rise-fade{position:relative;z-index:3;height:11rem;margin-top:-11rem;background:linear-gradient(to top,var(--bg) 35%,transparent);pointer-events:none}
+
+/* ============ footer ============ */
+footer{border-top:1px solid var(--n900);padding:5rem 2rem 8rem;position:relative}
+.foot{max-width:80rem;margin:0 auto;display:flex;flex-direction:column;gap:2.5rem;justify-content:space-between;font-size:.875rem;color:var(--n500)}
+@media (min-width:640px){.foot{flex-direction:row}}
+.foot-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5rem}
+.foot-cols a{display:block;margin-top:1rem;font-size:.8rem;color:var(--n400);transition:color .2s}
+.foot-cols a:hover{color:var(--n200)}
+
+/* modal */
+.modal{position:fixed;inset:0;z-index:200;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);padding:1.5rem}
+.modal.open{display:flex}
+.modal-box{width:min(52rem,100%);border-radius:1rem;border:1px solid var(--line);background:var(--n950);padding:.75rem;position:relative}
+.modal-box .dash{height:24rem;border-radius:.6rem}
+.modal-close{position:absolute;top:-2.6rem;right:0;color:var(--n300);display:flex;align-items:center;gap:.35rem;font-size:.85rem}
+
+/* ============ CSS iPhone frames (screenshot placeholders) ============ */
+[id]{scroll-margin-top:5rem}
+.phone{
+  --pw:16rem;position:relative;flex:none;width:var(--pw);aspect-ratio:9/19.5;border-radius:calc(var(--pw)*.17);
+  padding:calc(var(--pw)*.035);background:linear-gradient(150deg,#2b2b30,#0d0d0f 38%,#19191c 80%,#2b2b30);
+  box-shadow:0 0 0 1px rgba(255,255,255,.10) inset,0 0 0 calc(var(--pw)*.006) #3a3a40,0 30px 60px -20px rgba(0,0,0,.85);
+}
+.phone::before,.phone::after{content:"";position:absolute;width:calc(var(--pw)*.014);border-radius:3px;background:#2b2b30}
+.phone::before{left:calc(var(--pw)*-.012);top:19%;height:5%}
+.phone::after{right:calc(var(--pw)*-.012);top:27%;height:11%}
+.screen{
+  position:relative;height:100%;width:100%;overflow:hidden;border-radius:calc(var(--pw)*.135);
+  background:#0b0c0e;color:#fff;font-size:calc(var(--pw)*.048);line-height:1.3;
+  display:flex;flex-direction:column;padding:3em 1em 1em;text-align:left;
+}
+.screen .ic{width:1em;height:1em}
+.island{position:absolute;top:.75em;left:50%;transform:translateX(-50%);width:31%;height:1.65em;border-radius:999px;background:#000;z-index:5}
+.sbar{position:absolute;top:.95em;left:1.7em;right:1.5em;display:flex;justify-content:space-between;align-items:center;font-size:.78em;font-weight:600;z-index:4}
+.sbar .sig{display:flex;align-items:flex-end;gap:.16em}
+.sbar .sig i{display:block;width:.22em;border-radius:1px;background:#fff}
+.sbar .bat{display:block;width:1.7em;height:.85em;margin-left:.35em;border-radius:.25em;border:1px solid rgba(255,255,255,.55);background:linear-gradient(90deg,#fff 70%,transparent 70%) content-box;padding:1px}
+.home-ind{position:absolute;bottom:.45em;left:50%;transform:translateX(-50%);width:36%;height:.28em;border-radius:999px;background:rgba(255,255,255,.55);z-index:5}
+.ph-tag{
+  position:absolute;left:50%;bottom:1.75em;transform:translateX(-50%);z-index:6;white-space:nowrap;
+  font-size:.5em;letter-spacing:.08em;text-transform:uppercase;color:var(--n400);
+  border:1px dashed rgba(255,255,255,.22);border-radius:999px;padding:.3em .9em;background:rgba(8,9,10,.78);
+}
+.s-h{font-size:1.55em;font-weight:700;letter-spacing:-.01em;line-height:1.15}
+.s-sub{font-size:.75em;color:var(--n500)}
+.s-big{font-size:1.4em;font-weight:700;margin:.25em 0 .1em}
+.s-lbl{font-size:.68em;text-transform:uppercase;letter-spacing:.06em;color:var(--n500);margin:.9em 0 .4em}
+.s-row{display:flex;align-items:center;gap:.4em}
+.s-card{background:#15171a;border:1px solid rgba(255,255,255,.06);border-radius:.8em;padding:.7em .8em}
+.s-pill{display:inline-flex;align-items:center;gap:.3em;border-radius:999px;padding:.28em .7em;font-size:.68em;background:#1a1c20;color:var(--n300);border:1px solid rgba(255,255,255,.07);white-space:nowrap}
+.s-pill.on{background:rgba(57,195,239,.14);color:var(--accent);border-color:rgba(57,195,239,.38)}
+.s-search{display:flex;align-items:center;gap:.45em;margin-top:.6em;padding:.5em .7em;border-radius:.7em;background:#17191c;color:var(--n500);font-size:.75em}
+.s-timer{font-size:2.9em;font-weight:300;letter-spacing:-.02em;text-align:center;margin-top:.5em;font-variant-numeric:tabular-nums}
+.wave{display:flex;align-items:center;justify-content:center;gap:.24em;height:4.6em;margin:.4em 0 .8em}
+.wave i{display:block;width:.3em;border-radius:999px;background:var(--accent);height:var(--h,40%);animation:wv 1.15s ease-in-out infinite;animation-delay:var(--d,0s)}
+@keyframes wv{0%,100%{transform:scaleY(.5)}50%{transform:scaleY(1)}}
+.caret{display:inline-block;width:.1em;height:1em;margin-left:.1em;vertical-align:-.15em;background:var(--accent);animation:tw 1s steps(2) infinite}
+.rec-btn{width:4.2em;height:4.2em;border-radius:999px;border:.26em solid rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;margin:0 auto}
+.rec-btn i{display:block;width:1.5em;height:1.5em;border-radius:.35em;background:var(--accent)}
+.s-list{display:flex;flex-direction:column}
+.s-list .it{display:flex;align-items:flex-start;gap:.6em;padding:.6em 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.s-list .it b{display:block;font-size:.82em;font-weight:600}
+.s-list .it span{display:block;font-size:.68em;color:var(--n500)}
+.s-ico{width:2em;height:2em;border-radius:.55em;display:flex !important;align-items:center;justify-content:center;flex:none;background:#1a1c20;color:var(--accent)}
+.sheet{margin-top:auto;background:#17191c;border:1px solid rgba(255,255,255,.07);border-radius:1.3em 1.3em 1em 1em;padding:.8em .9em .9em}
+.grabber{width:2.6em;height:.3em;border-radius:999px;background:var(--n700);margin:0 auto .7em}
+.s-opt{display:flex;align-items:center;justify-content:space-between;padding:.5em 0;border-top:1px solid rgba(255,255,255,.06);font-size:.78em;color:var(--n300)}
+.s-opt>span:first-child{display:flex;align-items:center;gap:.45em}
+.tog{position:relative;width:2.4em;height:1.4em;border-radius:999px;background:var(--accent);flex:none}
+.tog::after{content:"";position:absolute;top:.15em;right:.15em;width:1.1em;height:1.1em;border-radius:999px;background:#fff}
+.s-btn{display:flex;align-items:center;justify-content:center;border-radius:.75em;padding:.62em;font-size:.82em;font-weight:600;background:var(--accent);color:#000}
+.s-todo{display:flex;align-items:center;gap:.5em;font-size:.78em;color:var(--n300);padding:.3em 0}
+.chk{display:block;width:1.1em;height:1.1em;border-radius:999px;border:1.5px solid var(--n600);flex:none}
+.chk.on{background:var(--accent);border-color:var(--accent)}
+.lock-bg{position:absolute;inset:0;background:radial-gradient(80% 55% at 30% 15%,rgba(57,195,239,.22),transparent 60%),radial-gradient(70% 50% at 80% 90%,rgba(255,255,255,.08),transparent 60%),#07080a}
+.lock-top{position:relative;text-align:center;margin-top:.6em}
+.lock-time{font-size:4.6em;font-weight:600;letter-spacing:-.03em;line-height:1}
+.wid-c{display:flex;align-items:center;justify-content:center;width:3.2em;height:3.2em;border-radius:999px;background:rgba(255,255,255,.12);backdrop-filter:blur(6px);color:#fff;flex:none}
+.wid-c .ic{width:1.3em;height:1.3em}
+.wid-c.sm{width:2.6em;height:2.6em}
+.wid-c.sm .ic{width:1em;height:1em}
+.wid-r{display:flex;flex-direction:column;gap:.15em;padding:.55em .8em;border-radius:1em;background:rgba(255,255,255,.12);font-size:.75em}
+.wid-r b{display:flex;align-items:center;gap:.35em;font-weight:600}
+.wid-r span{color:var(--n300)}
+.lock-top+.s-row{margin-top:1.2em}
+.lock-bot{position:absolute;left:1.6em;right:1.6em;bottom:2.6em;display:flex;justify-content:space-between}
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding-bottom:2em}
+.app-ic{display:flex;align-items:center;justify-content:center;width:4.4em;height:4.4em;border-radius:1.1em;color:#000;background:linear-gradient(160deg,#8be3fb,var(--accent) 55%,#0e7490);box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 12px 30px -8px rgba(57,195,239,.55)}
+.app-ic .ic{width:2.1em;height:2.1em}
+
+.player{margin-top:auto;margin-bottom:2.6em;display:flex;align-items:center;gap:.5em;padding:.55em .7em;border-radius:.8em;background:#15171a;border:1px solid rgba(255,255,255,.06);font-size:.72em;color:var(--n400)}
+.player .ic{color:var(--accent);fill:currentColor}
+.wave.sm{flex:1;height:1.6em;margin:0;gap:.15em;overflow:hidden;justify-content:flex-start}
+.wave.sm i{width:.2em;flex:none}
+@media (max-width:640px){.ava-row + .stars{margin-left:1.4rem}}
+
+/* hero: play button sits below the center phone's transcript */
+#tiltCard .play-wrap{inset:60% 0 auto 0}
+@media (max-width:767.9px){#tiltCard .play-wrap{inset:62% 0 auto 0}#tiltCard .play-btn{width:2.75rem;height:2.75rem}}
+
+/* hero: fan of three phones inside the tilt card */
+.fan{
+  height:100%;display:flex;justify-content:center;align-items:flex-start;padding-top:1.4rem;border-radius:1rem;
+  border:1px solid rgba(255,255,255,.06);
+  background:radial-gradient(55% 45% at 50% 28%,rgba(57,195,239,.12),transparent 70%),#0a0b0d;
+}
+.fan .phone{--pw:min(8.6rem,33vw)}
+.fan .phone.c{z-index:2}
+.fan .phone.l,.fan .phone.r{z-index:1;transform:translateY(9%) scale(.9) rotate(var(--r))}
+.fan .phone.l{--r:-7deg;margin-right:calc(var(--pw)*-.26)}
+.fan .phone.r{--r:7deg;margin-left:calc(var(--pw)*-.26)}
+@media (min-width:768px){
+  .fan{padding-top:2.5rem}
+  .fan .phone{--pw:clamp(8.6rem,24vw,18rem)}
+  .fan .phone.l{margin-right:calc(var(--pw)*-.1)}
+  .fan .phone.r{margin-left:calc(var(--pw)*-.1)}
+}
+
+/* how-it-works frames: phone + companion cards */
+.tf-stage{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1.5rem;padding:1.75rem .5rem;border-radius:.5rem;
+  background:radial-gradient(50% 60% at 35% 40%,rgba(57,195,239,.08),transparent 70%),#0c0d0f;border:1px solid rgba(255,255,255,.06);
+}
+.tf-stage .phone{--pw:min(12.5rem,56vw)}
+.side-stack{display:flex;flex-direction:column;gap:.6rem;width:min(15rem,100%);font-size:.75rem}
+.mini{display:flex;align-items:center;gap:.6rem;background:#101216;border:1px solid rgba(255,255,255,.06);border-radius:.6rem;padding:.6rem .75rem;color:var(--n400)}
+.mini b{color:#fff;font-weight:600}
+.mini .tag{margin-left:auto;border-radius:999px;padding:.1rem .5rem;font-size:.62rem;border:1px solid rgba(57,195,239,.4);color:var(--accent)}
+.mini .tag.gray{border-color:rgba(255,255,255,.15);color:var(--n500)}
+.mini .ic{color:var(--accent)}
+.watch{
+  position:relative;width:8rem;height:9.6rem;border-radius:2.3rem;padding:.4rem;flex:none;
+  background:linear-gradient(150deg,#2b2b30,#0d0d0f 45%,#2b2b30);box-shadow:0 0 0 1px rgba(255,255,255,.1) inset,0 20px 40px -16px rgba(0,0,0,.8);
+}
+.watch::before{content:"";position:absolute;right:-.35rem;top:2.2rem;width:.4rem;height:1.5rem;border-radius:.2rem;background:#3a3a40}
+.watch::after{content:"";position:absolute;right:-.2rem;top:4.4rem;width:.25rem;height:1.6rem;border-radius:.2rem;background:#2b2b30}
+.watch-screen{height:100%;border-radius:1.95rem;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3rem;font-size:.6rem;color:var(--n400)}
+.watch-screen .wave{height:2.2rem;margin:0;gap:.14rem}
+.watch-screen .wave i{width:.18rem}
+.watch-screen b{font-size:1.1rem;color:#fff;font-weight:500;font-variant-numeric:tabular-nums}
+.watch-screen .stop{width:1.6rem;height:1.6rem;border-radius:999px;background:rgba(57,195,239,.18);display:flex;align-items:center;justify-content:center}
+.watch-screen .stop i{display:block;width:.55rem;height:.55rem;border-radius:.12rem;background:var(--accent)}
+.weekcal{display:grid;grid-template-columns:repeat(7,1fr);gap:.25rem;text-align:center;font-size:.62rem;color:var(--n500)}
+.weekcal span{padding:.3rem 0;border-radius:.4rem}
+.weekcal span.on{background:var(--accent);color:#000;font-weight:700}
+.evt{border-left:2px solid var(--accent);padding:.3rem .5rem;background:rgba(57,195,239,.08);border-radius:0 .35rem .35rem 0;color:var(--n300);margin-top:.5rem}
+
+/* bento tweaks */
+.prof .frame .pic{display:flex;align-items:center;justify-content:center;width:3.6rem;height:3.6rem;border-radius:.4rem;color:#fff}
+.mini-stars{display:flex;gap:.1rem;color:var(--star)}
+.mini-stars svg{width:.8rem;height:.8rem}
+.tcard .who span{display:block}
+
+/* pricing: three tiers */
+@media (min-width:768px){.tiers.t3{grid-template-columns:repeat(3,1fr);gap:1rem;max-width:66rem}}
+.save{display:inline-block;margin-left:.35rem;border-radius:999px;padding:.05rem .45rem;font-size:.7rem;color:var(--accent);border:1px solid rgba(57,195,239,.4)}
+
+/* legal stubs */
+.legal{max-width:80rem;margin:3.5rem auto 0;display:grid;gap:.9rem;font-size:.8rem;color:var(--n500);border-top:1px solid var(--n900);padding-top:2rem}
+@media (min-width:768px){.legal{grid-template-columns:repeat(3,1fr);gap:2rem}}
+.legal b{display:block;color:var(--n300);font-weight:600;margin-bottom:.25rem}
+.legal a{color:var(--n300);text-decoration:underline;text-underline-offset:2px}
+</style>
+</head>
+<body>
+
+<!-- ============ 1. nav: floating pill bar; shrinks + fills on scroll ============ -->
+<header class="nav" id="nav">
+  <div class="nav-pill">
+    <div style="display:flex;align-items:center;gap:.5rem">
+      <a class="brand" href="#top" aria-label="Loopnote home">
+        <span class="brand-mark">
+          <svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+        </span>
+        <span>Loopnote</span>
+      </a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#reviews">Reviews</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+    </div>
+    <div class="nav-right">
+      <a class="btn btn-primary" href="#download"><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Download</span></a>
+    </div>
+    <button class="nav-burger" id="burger" aria-label="Open menu" aria-expanded="false">
+      <svg class="ic" id="burger-open" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h16"/></svg>
+      <svg class="ic" id="burger-close" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="display:none"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+    </button>
+  </div>
+</header>
+<div class="mnav" id="mnav">
+  <a href="#features">Features</a>
+  <a href="#how">How it works</a>
+  <a href="#reviews">Reviews</a>
+  <a href="#pricing">Pricing</a>
+  <a href="#faq">FAQ</a>
+  <a href="#download" style="color:var(--accent)">Download on the App Store</a>
+</div>
+
+<main id="top" style="position:relative;overflow:hidden">
+  <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
+
+  <!-- ============ 2. hero ============ -->
+  <section class="hero">
+    <div class="wrap" style="display:flex;flex-direction:column;align-items:center">
+      <h1 class="grad-h rv">Say it once. Loopnote remembers the rest.</h1>
+      <p class="sub rv" style="--d:.08s">Loopnote turns your voice memos into organized notes, to-dos and reminders, so the thought you had on the walk home is still there when you need it.</p>
+      <div class="social-proof rv" style="--d:.16s">
+        <div style="display:flex;flex-direction:column;align-items:center">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;justify-content:center">
+            <div class="ava-row" aria-hidden="true">
+              <span class="ava" style="background:linear-gradient(135deg,#0e7490,#155e75);transform:rotate(-4deg)">DW</span><span class="ava" style="background:linear-gradient(135deg,#4338ca,#312e81);transform:rotate(3deg)">TL</span><span class="ava" style="background:linear-gradient(135deg,#0f766e,#134e4a);transform:rotate(-2deg)">RD</span><span class="ava" style="background:linear-gradient(135deg,#7c3aed,#4c1d95);transform:rotate(5deg)">KO</span><span class="ava" style="background:linear-gradient(135deg,#b45309,#78350f);transform:rotate(-3deg)">AB</span>
+            </div>
+            <span class="stars" aria-label="Rated 4.8 out of 5 on the App Store">
+              <svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg>
+            </span>
+          </div>
+          <!-- placeholder metric: swap for the real App Store rating and count at launch -->
+          <p class="proof-line">4.8 on the App Store from 12,000+ people who think out loud</p>
+        </div>
+      </div>
+      <div class="hero-cta rv" style="--d:.22s;flex-wrap:wrap">
+        <!-- App Store URL: swap #download for https://apps.apple.com/app/idXXXXXXXXX -->
+        <a class="btn btn-primary btn-lg" href="#download">
+          <svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Download on the App Store</span>
+        </a>
+        <a class="btn btn-muted btn-lg" href="#how"><span>See how it works</span><svg class="ic arr" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg></a>
+      </div>
+    </div>
+
+    <!-- 3D tilt card holding a fan of three iPhone screenshot placeholders: rotateX eases 20deg -> 0 on scroll; grayscale lifts on hover -->
+    <div class="stage">
+      <div class="tilt-card" id="tiltCard">
+        <span class="meteor" style="--mdur:3.2s;--mw:110px"></span>
+        <div class="play-wrap">
+          <button class="play-btn" id="playBtn" aria-label="Watch the app preview">
+            <svg class="ic" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" stroke="none" aria-hidden="true"><path d="M6 3.5 20 12 6 20.5z"/></svg>
+          </button>
+        </div>
+        <div class="tilt-inner">
+          <div class="fan">
+            <div class="phone l">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="Loopnote inbox with memos sorted into ideas, to-dos and notes (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="s-h">Inbox</div>
+<div class="s-search"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>Search memos</div>
+<div class="s-row" style="gap:.35em;flex-wrap:wrap;margin:.6em 0 .2em"><span class="s-pill on">All</span><span class="s-pill">Ideas</span><span class="s-pill">To-dos</span><span class="s-pill">Notes</span></div>
+<div class="s-list">
+<div class="it"><span class="s-ico"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span><div><b>Async standups</b><span>Idea &middot; Work &middot; 2 min ago</span></div></div>
+<div class="it"><span class="s-ico"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></span><div><b>Send the deck to Priya</b><span>To-do &middot; Friday 9:00 AM</span></div></div>
+<div class="it"><span class="s-ico"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><div><b>Lecture: cell signaling</b><span>Note &middot; Biology &middot; 1:12</span></div></div>
+<div class="it"><span class="s-ico"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></span><div><b>Oat milk, AA batteries</b><span>To-do &middot; Groceries</span></div></div>
+<div class="it"><span class="s-ico"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><div><b>Call notes: landlord</b><span>Note &middot; Home</span></div></div>
+</div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+            <div class="phone c">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="Loopnote recording a memo with a live transcript (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="s-row" style="justify-content:space-between"><div><div class="s-h">Recording</div><div class="s-sub">from Lock Screen widget</div></div><span class="s-pill on"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Locked</span></div>
+<div class="s-timer">0:42</div>
+<div class="wave" aria-hidden="true"><i style="--h:30%;--d:0s"></i><i style="--h:55%;--d:0.1s"></i><i style="--h:80%;--d:0.2s"></i><i style="--h:45%;--d:0.3s"></i><i style="--h:95%;--d:0.15s"></i><i style="--h:65%;--d:0.25s"></i><i style="--h:40%;--d:0.05s"></i><i style="--h:85%;--d:0.35s"></i><i style="--h:60%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:70%;--d:0.3s"></i><i style="--h:35%;--d:0.05s"></i><i style="--h:75%;--d:0.25s"></i><i style="--h:50%;--d:0.15s"></i><i style="--h:90%;--d:0.35s"></i><i style="--h:45%;--d:0.2s"></i><i style="--h:25%;--d:0.1s"></i></div>
+<div class="s-card" style="font-size:.82em;color:var(--n300)">&ldquo;...and remind me Friday to send the deck to Priya. Also an idea: async standups for the team<span class="caret"></span></div>
+<div class="s-row" style="flex-wrap:wrap;gap:.4em;margin-top:.7em"><span class="s-pill"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>To-do</span><span class="s-pill"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>Idea</span><span class="s-pill on"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Friday</span></div>
+<div style="margin-top:auto;padding-bottom:2.2em"><div class="rec-btn"><i></i></div></div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+            <div class="phone r">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="Loopnote reminder sheet scheduling Friday 9:00 AM (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="s-sub" style="margin-top:.3em">Memo &middot; 0:42</div>
+<div class="s-card" style="margin-top:.5em;font-size:.82em;color:var(--n300)">&ldquo;Remind me <span style="color:var(--accent)">Friday</span> to send the deck to Priya.&rdquo;</div>
+<div class="sheet">
+<div class="grabber"></div>
+<div class="s-row" style="color:var(--accent);font-size:.78em;font-weight:600"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg>Reminder scheduled</div>
+<div class="s-big">Friday, 9:00 AM</div>
+<div class="s-sub" style="color:var(--n300);font-size:.82em">Send the deck to Priya</div>
+<div class="s-opt"><span><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg>Apple Reminders</span><span class="tog"></span></div>
+<div class="s-opt"><span><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg>Calendar</span><span class="tog"></span></div>
+<div class="s-btn" style="margin-top:.8em">Done</div>
+</div>
+<div style="height:1.8em"></div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+          </div>
+        </div>
+        <div class="tilt-fade"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 3. feature bento: 1 wide + 4 cards, each with a CSS vignette ============ -->
+  <section class="sec" id="features">
+    <div class="chip3d-wrap rv"><div class="chip3d"><div class="chip3d-inner">
+      <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+    </div></div></div>
+    <h2 class="grad-h rv" style="padding-top:1rem">Built for the moment the thought arrives</h2>
+    <p class="sub rv">Capture in one tap, let it sort itself, and get reminded at the right time, all without leaving your iPhone.</p>
+
+    <div class="bento">
+      <div class="bcard b-span2 rv">
+        <h3>Capture without opening the app</h3>
+        <p>Tap the Lock Screen widget, press the Action Button or start from your Apple Watch. Loopnote is recording before the thought slips away.</p>
+        <div class="vig">
+          <div class="chan">
+            <svg class="wire" width="62" height="105" viewBox="0 0 62 105" fill="none" style="left:50%;top:-2.5rem;transform:translateX(-60px)" aria-hidden="true">
+              <path d="M1 -20L1 57.5C1 64.13 6.37 69.5 13 69.5H49C55.63 69.5 61 74.87 61 81.5L61 105" stroke="currentColor" stroke-width="1.5"/>
+              <path class="wirepulse" d="M1 -20L1 57.5C1 64.13 6.37 69.5 13 69.5H49C55.63 69.5 61 74.87 61 81.5L61 105" stroke="#39C3EF" stroke-width="1.5"/>
+            </svg>
+            <svg class="wire" width="128" height="69" viewBox="0 0 128 69" fill="none" style="left:50%;bottom:-.5rem;transform:translateX(1rem)" aria-hidden="true">
+              <path d="M1 .5L1 29.59C1 36.21 6.37 41.59 13 41.59H115C121.63 41.59 127 46.96 127 53.59L127 75" stroke="currentColor" stroke-width="1.5"/>
+              <path class="wirepulse" style="animation-delay:1.4s" d="M1 .5L1 29.59C1 36.21 6.37 41.59 13 41.59H115C121.63 41.59 127 46.96 127 53.59L127 75" stroke="#39C3EF" stroke-width="1.5"/>
+            </svg>
+            <div class="chan-row">
+              <span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="6"/><polyline points="12 10 12 12 13 13"/><path d="m16.13 7.66-.81-4.05a2 2 0 0 0-2-1.61h-2.68a2 2 0 0 0-2 1.61l-.78 4.05"/><path d="m7.88 16.36.8 4a2 2 0 0 0 2 1.61h2.72a2 2 0 0 0 2-1.61l.81-4.05"/></svg></span><span class="orb" style="width:3rem;height:3rem;color:#fff"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg></span>
+            </div>
+            <div class="chan-row">
+              <span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></span><span class="orb" style="width:3rem;height:3rem;"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bcard rv" style="--d:.06s">
+        <div class="vig nomask">
+          <div class="graphv">
+            <span class="pill">Fri 9:00 AM &middot; scheduled</span>
+            <svg width="335" height="163" viewBox="0 0 335 163" fill="none" aria-hidden="true">
+              <path opacity=".75" d="M335 151L317.5 36.2C317.2 34.1 316.5 32 315.6 30.1C307.7 13.1 308.9 1 284 1C257.7 1 244.3 37.2 218 37.2C191.7 37.2 195.3 67.5 169 67.5C142.7 67.5 141.3 37.2 115 37.2C88.7 37.2 88.7 76.6 62.5 76.6C36.2 76.6 36.2 54.7 9.9 54.7H0" stroke="currentColor" stroke-width="1.5"/>
+              <path class="gpulse" d="M335 151L317.5 36.2C317.2 34.1 316.5 32 315.6 30.1C307.7 13.1 308.9 1 284 1C257.7 1 244.3 37.2 218 37.2C191.7 37.2 195.3 67.5 169 67.5C142.7 67.5 141.3 37.2 115 37.2C88.7 37.2 88.7 76.6 62.5 76.6C36.2 76.6 36.2 54.7 9.9 54.7H0" stroke="#39C3EF" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+        <h3>Reminders that know when</h3>
+        <p>Say &ldquo;remind me Friday&rdquo; and it is scheduled, synced with Apple Reminders and Calendar.</p>
+      </div>
+
+      <div class="bcard rv">
+        <div class="vig">
+          <div class="aiv">
+            <span class="spark" style="left:38%;top:30%;--d:0s"></span>
+            <span class="spark" style="left:52%;top:22%;--d:.5s"></span>
+            <span class="spark" style="left:47%;top:68%;--d:1s"></span>
+            <span class="spark" style="left:60%;top:55%;--d:1.5s"></span>
+            <span class="spark" style="left:41%;top:48%;--d:2s"></span>
+            <span class="orb" style="width:2.2rem;height:2.2rem;--d:0s"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></span>
+            <span class="orb" style="width:3rem;height:3rem;--d:.3s"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg></span>
+            <span class="orb" style="width:4rem;height:4rem;--d:.6s;color:#fff"><svg class="ic" viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg></span>
+            <span class="orb" style="width:3rem;height:3rem;--d:.9s"><svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg></span>
+            <span class="orb" style="width:2.2rem;height:2.2rem;--d:1.2s"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></span>
+            <span class="scan" aria-hidden="true"></span>
+          </div>
+        </div>
+        <h3>Notes that sort themselves</h3>
+        <p>Transcribed on your iPhone, then split into notes, to-dos and ideas and filed into smart folders.</p>
+      </div>
+
+      <div class="bcard rv" style="--d:.06s">
+        <div class="vig nomask">
+          <div class="pipev">
+            <div class="pipebg" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+            <div class="chipbox c1"><span>Record complication</span></div>
+            <div class="chipbox c2"><span>Today&rsquo;s to-dos widget</span></div>
+            <div class="chipbox c3"><span>Latest memo widget</span></div>
+            <div class="cur a" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="rgba(30,58,138,.9)" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.04 4.69a.5.5 0 0 1 .65-.65l16 6.5a.5.5 0 0 1-.06.95l-6.12 1.58a2 2 0 0 0-1.44 1.43l-1.58 6.13a.5.5 0 0 1-.95.06z"/></svg>
+              <span>Home Screen</span>
+            </div>
+            <div class="cur b" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="rgba(30,58,138,.9)" stroke="#3b82f6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4.04 4.69a.5.5 0 0 1 .65-.65l16 6.5a.5.5 0 0 1-.06.95l-6.12 1.58a2 2 0 0 0-1.44 1.43l-1.58 6.13a.5.5 0 0 1-.95.06z"/></svg>
+              <span>Apple Watch</span>
+            </div>
+          </div>
+        </div>
+        <h3>On your wrist and Home Screen</h3>
+        <p>A Watch app and widgets for recording, today&rsquo;s to-dos and your latest memo, one glance away.</p>
+      </div>
+
+      <div class="bcard rv">
+        <div class="vig nomask">
+          <div class="profv">
+            <div class="prof p1">
+              <span class="frame"><span class="pic" style="background:linear-gradient(135deg,#0e7490,#155e75)"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span></span>
+              <b>Audio stays on your iPhone</b>
+              <div class="meta"><span>Transcribed on device</span><i></i><span>never uploaded</span></div>
+              <svg width="336" height="90" viewBox="0 0 336 126" fill="none" aria-hidden="true"><path d="M0 63C10 63 10 30 20 30C30 30 30 96 40 96C49 96 49 50 59 50C69 50 69 80 79 80C89 80 89 20 99 20C109 20 109 106 119 106C128 106 128 40 138 40C148 40 148 86 158 86C168 86 168 56 178 56C188 56 188 70 198 70C208 70 208 63 217 63C227 63 227 63 237 63C247 63 247 63 257 63C267 63 267 63 277 63C287 63 287 63 296 63C306 63 306 63 316 63C326 63 326 63 336 63" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+            <div class="prof p2">
+              <span class="frame"><span class="pic" style="background:linear-gradient(135deg,#4338ca,#312e81)"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg></span></span>
+              <b>Notes sync through your iCloud</b>
+              <div class="meta"><span>Your account</span><i></i><span>Pro</span></div>
+              <svg width="336" height="90" viewBox="0 0 336 126" fill="none" aria-hidden="true"><path d="M0 104C10 104 10 40 20 40C30 40 30 100 40 100C49 100 49 60 59 60C69 60 69 112 79 112C89 112 89 70 99 70C109 70 109 92 119 92C128 92 128 55 138 55C148 55 148 80 158 80C168 80 168 45 178 45C188 45 188 88 198 88C208 88 208 35 217 35C227 35 227 75 237 75C247 75 247 50 257 50C267 50 267 95 277 95C287 95 287 30 296 30C306 30 306 85 316 85C326 85 326 60 336 60" stroke="currentColor" stroke-width="1.5"/></svg>
+            </div>
+          </div>
+        </div>
+        <h3>Private by design</h3>
+        <p>Transcription runs on the iPhone itself, so your audio never leaves the phone.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 4. how it works (tools showcase): text + framed iPhone placeholders ============ -->
+  <section class="sec" id="how" style="padding-bottom:2rem">
+    <div class="chip3d-wrap rv"><div class="chip3d"><div class="chip3d-inner">
+      <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="8" height="8" x="3" y="3" rx="2"/><path d="M7 11v4a2 2 0 0 0 2 2h4"/><rect width="8" height="8" x="13" y="13" rx="2"/></svg>
+    </div></div></div>
+    <h2 class="grad-h rv" style="padding-top:1rem">From voice to done in three steps</h2>
+    <p class="sub rv">Talk the way you think. Loopnote handles the filing and the follow-up.</p>
+
+    <div class="tool-row">
+      <div class="tool-txt rv">
+        <div class="ticon"><svg class="ic" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></div>
+        <h3>Say it</h3>
+        <p>Lock Screen widget, Action Button or Apple Watch. One tap and you are recording, no app to open.</p>
+      </div>
+      <div class="tool-frame rv" style="--d:.08s">
+        <div class="tf-stage">
+          <div class="phone ">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="iPhone Lock Screen with the Loopnote record widget (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="lock-bg" aria-hidden="true"></div>
+<div class="lock-top"><div class="s-sub" style="color:var(--n300)">Thursday, October 1</div><div class="lock-time">9:41</div></div>
+<div class="s-row" style="gap:.6em;justify-content:center;position:relative">
+<span class="wid-c"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/></svg></span>
+<div class="wid-r"><b><svg class="ic" viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>Loopnote</b><span>3 to-dos today</span></div>
+</div>
+<div class="lock-bot"><span class="wid-c sm"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6c0 2-2 2-2 4v10a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2V10c0-2-2-2-2-4V2h12z"/><path d="M6 6h12"/><path d="M12 12v.01"/></svg></span><span class="wid-c sm"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span></div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+          <div class="watch" role="img" aria-label="Apple Watch recording a memo (mockup)">
+            <div class="watch-screen">
+              <span>Loopnote</span>
+              <div class="wave" aria-hidden="true"><i style="--h:40%;--d:0s"></i><i style="--h:75%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:55%;--d:0.3s"></i><i style="--h:85%;--d:0.15s"></i><i style="--h:45%;--d:0.25s"></i><i style="--h:70%;--d:0.05s"></i><i style="--h:35%;--d:0.2s"></i></div>
+              <b>0:12</b>
+              <span class="stop"><i></i></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-row">
+      <div class="tool-txt rv">
+        <div class="ticon"><svg class="ic" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg></div>
+        <h3>It sorts itself</h3>
+        <p>Transcribed on device, then split into clean notes, to-dos and ideas and filed into smart folders.</p>
+      </div>
+      <div class="tool-frame rv" style="--d:.08s">
+        <div class="tf-stage">
+          <div class="phone ">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="A Loopnote note with transcript, extracted to-dos and its smart folder (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="s-row" style="color:var(--accent);font-size:.8em;margin-top:.2em"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>Inbox</div>
+<div class="s-h" style="font-size:1.3em;margin-top:.3em">Pitch: async standups</div>
+<div class="s-sub">Idea &middot; Work / Product &middot; 0:58</div>
+<div class="s-card" style="margin-top:.6em;font-size:.78em;color:var(--n300)">Replace the daily call with a two-minute voice update everyone posts before ten. Try it with the design team first.</div>
+<div class="s-lbl">To-dos pulled from this memo</div>
+<div class="s-todo"><span class="chk on"></span>Draft the proposal</div>
+<div class="s-todo"><span class="chk"></span>Ask Sam about the design team</div>
+<div class="s-lbl">Filed to</div>
+<div class="s-row" style="gap:.35em;flex-wrap:wrap"><span class="s-pill on"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>Work / Product</span><span class="s-pill"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>Ideas</span></div>
+<div class="player"><svg class="ic" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 20 12 6 20.5z"/></svg><div class="wave sm" aria-hidden="true"><i style="--h:40%;--d:0s"></i><i style="--h:75%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:55%;--d:0.3s"></i><i style="--h:85%;--d:0.15s"></i><i style="--h:45%;--d:0.25s"></i><i style="--h:70%;--d:0.05s"></i><i style="--h:35%;--d:0.2s"></i><i style="--h:40%;--d:0s"></i><i style="--h:75%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:55%;--d:0.3s"></i><i style="--h:85%;--d:0.15s"></i><i style="--h:45%;--d:0.25s"></i><i style="--h:70%;--d:0.05s"></i><i style="--h:35%;--d:0.2s"></i></div><span>0:58</span></div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+          <div class="side-stack" aria-hidden="true">
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg><b>Ideas</b><span class="tag">48</span></div>
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg><b>To-dos</b><span class="tag">12</span></div>
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><b>Work / Product</b><span class="tag gray">31</span></div>
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><b>Biology 201</b><span class="tag gray">19</span></div>
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg><b>Groceries</b><span class="tag gray">6</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tool-row">
+      <div class="tool-txt rv">
+        <div class="ticon"><svg class="ic" viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10.268 21a2 2 0 0 0 3.464 0"/><path d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"/></svg></div>
+        <h3>It reminds you</h3>
+        <p>Say when, and Loopnote schedules it, synced with Apple Reminders and Calendar.</p>
+      </div>
+      <div class="tool-frame rv" style="--d:.08s">
+        <div class="tf-stage">
+          <div class="phone ">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="Loopnote Today view listing reminders created from memos (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="s-h">Today</div>
+<div class="s-sub">4 reminders &middot; synced with Apple Reminders</div>
+<div class="s-list" style="margin-top:.4em">
+<div class="it"><span class="chk on" style="margin-top:.2em"></span><div><b>Send the deck to Priya</b><span>9:00 AM &middot; from a memo</span></div></div>
+<div class="it"><span class="chk" style="margin-top:.2em"></span><div><b>Pick up prescription</b><span>5:30 PM &middot; from a memo</span></div></div>
+<div class="it"><span class="chk" style="margin-top:.2em"></span><div><b>Book the dentist for Mia</b><span>Tomorrow &middot; Family</span></div></div>
+<div class="it"><span class="chk" style="margin-top:.2em"></span><div><b>Call Mum</b><span>Sunday 11:00 AM</span></div></div>
+</div>
+<div class="s-card" style="margin-top:.8em;font-size:.75em"><div class="s-row" style="color:var(--accent);font-weight:600"><svg class="ic" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>Heard in your memo</div><div style="color:var(--n400);margin-top:.3em">&ldquo;...pick up the prescription after work&rdquo;</div></div>
+<div class="player"><svg class="ic" viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3.5 20 12 6 20.5z"/></svg><div class="wave sm" aria-hidden="true"><i style="--h:40%;--d:0s"></i><i style="--h:75%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:55%;--d:0.3s"></i><i style="--h:85%;--d:0.15s"></i><i style="--h:45%;--d:0.25s"></i><i style="--h:70%;--d:0.05s"></i><i style="--h:35%;--d:0.2s"></i><i style="--h:40%;--d:0s"></i><i style="--h:75%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:55%;--d:0.3s"></i><i style="--h:85%;--d:0.15s"></i><i style="--h:45%;--d:0.25s"></i><i style="--h:70%;--d:0.05s"></i><i style="--h:35%;--d:0.2s"></i></div><span>0:21</span></div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+          <div class="side-stack" aria-hidden="true">
+            <div class="mini" style="flex-direction:column;align-items:stretch">
+              <div style="display:flex;align-items:center;gap:.5rem"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></svg><b>Calendar</b><span class="tag gray" style="margin-left:auto">October</span></div>
+              <div class="weekcal" style="margin-top:.6rem"><span>M 28</span><span>T 29</span><span>W 30</span><span>T 1</span><span class="on">F 2</span><span>S 3</span><span>S 4</span></div>
+              <div class="evt">9:00 AM &middot; Send the deck to Priya</div>
+            </div>
+            <div class="mini"><svg class="ic" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/></svg><b>Apple Reminders</b><span class="tag">synced</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 5. testimonials: dimmed masonry backdrop + rotating spotlight slider ============ -->
+  <section class="sec" id="reviews" style="padding-bottom:0">
+    <div class="chip3d-wrap rv"><div class="chip3d"><div class="chip3d-inner">
+      <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    </div></div></div>
+    <h2 class="grad-h rv" style="padding-top:1rem">Loved by people who think out loud</h2>
+    <p class="sub rv">Founders, students, parents and commuters, in their own App Store reviews.</p>
+
+    <div style="position:relative;margin-top:3rem">
+      <!-- fictional App Store-style reviews -->
+      <div class="t-backdrop" aria-hidden="true">
+        <div class="tgrid">
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;My brain dump finally has a home. Ten memos a day and I never sort anything.&rdquo;</h4><div class="who"><span class="mono" style="background:#7c3aed">KO</span><div><b>Kemi O.</b><span>Founder</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;I record lecture thoughts on the walk out and they are in my Biology folder by the bus stop.&rdquo;</h4><div class="who"><span class="mono" style="background:#b45309">AB</span><div><b>Arjun B.</b><span>Student</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;The Action Button shortcut is the whole app for me. Press, talk, done.&rdquo;</h4><div class="who"><span class="mono" style="background:#0f766e">MV</span><div><b>Marta V.</b><span>Commuter</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;It caught the dentist appointment I mumbled while making lunches.&rdquo;</h4><div class="who"><span class="mono" style="background:#4338ca">JH</span><div><b>Jess H.</b><span>Parent of two</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;Recording from the Watch while driving to work changed my mornings.&rdquo;</h4><div class="who"><span class="mono" style="background:#0e7490">SN</span><div><b>Sam N.</b><span>Sales lead</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;I trust it because the audio never leaves my phone. That sold me.&rdquo;</h4><div class="who"><span class="mono" style="background:#9d174d">EL</span><div><b>Elif L.</b><span>Therapist</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;Family Sharing means my partner and I split one Pro subscription.&rdquo;</h4><div class="who"><span class="mono" style="background:#155e75">CW</span><div><b>Chris W.</b><span>Parent of three</span></div></div></div>
+          <div class="tcard"><div class="mini-stars"><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg></div><h4>&ldquo;Ideas, to-dos and notes split out on their own. It is uncanny.&rdquo;</h4><div class="who"><span class="mono" style="background:#3f6212">NP</span><div><b>Nadia P.</b><span>Writer</span></div></div></div>
+        </div>
+      </div>
+
+      <div class="slider">
+        <div class="sparkfield" id="sparkfield" aria-hidden="true"></div>
+        <div class="halo">
+          <span class="mono on" style="background:linear-gradient(135deg,#0e7490,#155e75)" data-i="0">DW</span>
+          <span class="mono" style="background:linear-gradient(135deg,#4338ca,#312e81)" data-i="1">TL</span>
+          <span class="mono" style="background:linear-gradient(135deg,#0f766e,#134e4a)" data-i="2">RD</span>
+        </div>
+        <div class="quotes">
+          <p class="quote on">&ldquo;I pitch ideas to myself on every run. Loopnote turns them into a to-do list before I am back home.&rdquo;</p>
+          <p class="quote">&ldquo;Three lectures a day, zero typed notes. Everything lands in the right course folder, searchable by the next morning.&rdquo;</p>
+          <p class="quote">&ldquo;I say it once in the car. Loopnote remembers the permission slip.&rdquo;</p>
+        </div>
+        <div class="t-pills">
+          <button class="t-pill on" data-i="0"><b>Dana W.</b>Founder &middot; App Store review</button>
+          <button class="t-pill" data-i="1"><b>Theo L.</b>Med student &middot; App Store review</button>
+          <button class="t-pill" data-i="2"><b>Rosa D.</b>Parent of three &middot; App Store review</button>
+        </div>
+      </div>
+      <div class="t-fade" aria-hidden="true"></div>
+    </div>
+  </section>
+
+  <!-- ============ 6. pricing: billing switch + Free / Pro (featured w/ meteor) / Family ============ -->
+  <section class="sec" id="pricing" style="padding-bottom:2rem">
+    <div class="chip3d-wrap rv"><div class="chip3d"><div class="chip3d-inner">
+      <svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M14 8H8"/><path d="M16 12H8"/><path d="M13 16H8"/></svg>
+    </div></div></div>
+    <h2 class="grad-h rv" style="padding-top:1rem">Free to start. Pro when you talk a lot.</h2>
+    <p class="sub rv">Free for the occasional memo. Pro for founders, students, parents and commuters who think out loud all day.</p>
+
+    <div class="switch-row rv">
+      <p class="on" id="lblMonthly">monthly</p>
+      <button class="sw" id="billSwitch" role="switch" aria-checked="false" aria-label="Toggle yearly billing"><i></i></button>
+      <p id="lblYearly">yearly <span class="save">save 33%</span></p>
+    </div>
+
+    <div class="tiers t3">
+      <div class="tier rv">
+        <div>
+          <h3>Free</h3>
+          <p class="price" data-monthly="$0 / month" data-yearly="$0 / year">$0 / month</p>
+          <p class="desc">For the occasional memo</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>20 memos a month</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>On-device transcription</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Basic folders</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Lock Screen widget and Action Button</li>
+          </ul>
+        </div>
+        <a class="btn btn-muted" href="#download">Download free</a>
+      </div>
+
+      <div class="tier featured rv" style="--d:.05s">
+        <span class="meteor" style="top:0;--mdur:2.6s;--mw:80px"></span>
+        <div>
+          <h3>Loopnote Pro</h3>
+          <p class="price" data-monthly="$4.99 / month" data-yearly="$39.99 / year">$4.99 / month</p>
+          <p class="desc">7-day free trial, then billed through the App Store</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Everything in Free, plus</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Unlimited memos</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Smart reminders with Apple Reminders and Calendar</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Apple Watch app</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>iCloud sync</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Export your notes</li>
+          </ul>
+        </div>
+        <a class="btn btn-primary" href="#download">Start 7-day free trial</a>
+      </div>
+
+      <div class="tier rv" style="--d:.1s">
+        <div>
+          <h3>Family</h3>
+          <p class="price" data-monthly="$4.99 / month" data-yearly="$39.99 / year">$4.99 / month</p>
+          <p class="desc">One Pro subscription, shared through Family Sharing</p>
+          <ul>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Everything in Pro</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Up to 6 people with Family Sharing</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Everyone keeps their own private notes</li>
+            <li><svg class="ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>One subscription, one bill</li>
+          </ul>
+        </div>
+        <a class="btn btn-muted" href="#download">Get Pro for the family</a>
+      </div>
+    </div>
+
+    <div class="marq-wrap rv">
+      <!-- fictional publications; swap for real press only once coverage exists -->
+      <p>As featured in</p>
+      <div class="marq">
+        <div class="marq-track">
+          <span class="mark" style="letter-spacing:.14em">THE MARGIN POST</span>
+          <span class="mark" style="font-style:italic;font-weight:500">kettleworks</span>
+          <span class="mark" style="letter-spacing:.06em;font-weight:800">NORTHFOLD REVIEW</span>
+          <span class="mark" style="font-weight:500">Tidewater Tech</span>
+          <span class="mark" style="letter-spacing:-.02em;font-weight:700">orbitly</span>
+          <span class="mark" style="letter-spacing:.2em;font-weight:600">BRASSLINE</span>
+          <span class="mark" style="letter-spacing:.14em">THE MARGIN POST</span>
+          <span class="mark" style="font-style:italic;font-weight:500">kettleworks</span>
+          <span class="mark" style="letter-spacing:.06em;font-weight:800">NORTHFOLD REVIEW</span>
+          <span class="mark" style="font-weight:500">Tidewater Tech</span>
+          <span class="mark" style="letter-spacing:-.02em;font-weight:700">orbitly</span>
+          <span class="mark" style="letter-spacing:.2em;font-weight:600">BRASSLINE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ 7. faq: single-open accordion ============ -->
+    <div class="faq" id="faq">
+      <h2 class="grad-h rv">Frequently asked questions</h2>
+      <div class="faq-list">
+        <div class="qa rv"><button class="qa-btn">Is Loopnote free?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Yes. The free plan includes 20 memos a month, on-device transcription and basic folders. Pro unlocks unlimited memos, smart reminders, the Watch app, iCloud sync and export.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">Does my audio leave my phone?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>No. Transcription happens on your iPhone, so your audio never leaves the phone. With Pro, your notes can sync through your own iCloud account.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">How do I record without opening the app?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Add the Lock Screen widget, assign Loopnote to the Action Button, or start a memo from the Apple Watch app. One tap and it is recording.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">How do reminders work?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Say something like &ldquo;remind me Friday&rdquo; in a memo. Loopnote schedules it and syncs it with Apple Reminders and Calendar.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">What does Loopnote do with a long, rambling memo?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>It turns it into a clean note and pulls out to-dos and ideas, then files each into the right smart folder.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">How does the free trial work?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Pro starts with a 7-day free trial through the App Store. Cancel any time before it ends in your Apple ID subscription settings and you will not be charged.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">Can my family share Pro?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Yes. One Pro subscription covers up to 6 people with Family Sharing, and everyone&rsquo;s notes stay their own.</p></div></div>
+        <div class="qa rv"><button class="qa-btn">Can I get my notes out?<svg class="ic" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button><div class="qa-body"><p>Pro includes export, so your notes are never locked in.</p></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ 8. cta (#download target): split copy + button, then a CSS iPhone that rises on scroll ============ -->
+  <section class="cta" id="download">
+    <div class="cta-grid">
+      <div class="cta-copy">
+        <h2>Your next good idea is one tap away</h2>
+        <p>Download Loopnote free on the App Store, then try Pro free for 7 days: unlimited memos, smart reminders and the Watch app.</p>
+        <div class="social-proof">
+          <div style="display:flex;align-items:center;flex-wrap:wrap">
+            <div class="ava-row" aria-hidden="true">
+              <span class="ava" style="width:2.8rem;height:2.8rem;background:linear-gradient(135deg,#0e7490,#155e75);transform:rotate(-4deg)">DW</span><span class="ava" style="width:2.8rem;height:2.8rem;background:linear-gradient(135deg,#4338ca,#312e81);transform:rotate(3deg)">TL</span><span class="ava" style="width:2.8rem;height:2.8rem;background:linear-gradient(135deg,#0f766e,#134e4a);transform:rotate(-2deg)">RD</span><span class="ava" style="width:2.8rem;height:2.8rem;background:linear-gradient(135deg,#7c3aed,#4c1d95);transform:rotate(5deg)">KO</span>
+            </div>
+            <span class="stars" aria-hidden="true">
+              <svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg><svg class="star" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M11.05 2.9a1 1 0 0 1 1.9 0l1.9 5.8a1 1 0 0 0 .95.7h6.1a1 1 0 0 1 .59 1.8l-4.94 3.6a1 1 0 0 0-.36 1.1l1.88 5.8a1 1 0 0 1-1.54 1.12l-4.94-3.58a1 1 0 0 0-1.18 0l-4.94 3.58a1 1 0 0 1-1.54-1.11l1.88-5.8a1 1 0 0 0-.36-1.13L1.5 11.2a1 1 0 0 1 .59-1.8h6.1a1 1 0 0 0 .95-.7z"/></svg>
+            </span>
+          </div>
+          <p class="proof-line">4.8 on the App Store from 12,000+ ratings</p>
+        </div>
+      </div>
+      <!-- App Store URL: swap #download for https://apps.apple.com/app/idXXXXXXXXX -->
+      <a class="btn btn-primary btn-lg" href="#download">
+        <svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/></svg><span>Download on the App Store</span>
+      </a>
+    </div>
+
+    <div class="rise" aria-hidden="true" style="position:relative">
+      <span class="rise-glow"></span>
+      <div class="phone " id="risePhone">
+<!-- Screenshot placeholder: drop the real App Store screenshot here as an inline data: URI (WebP/PNG, ~1024px tall, under ~150 KB), e.g. <img src="data:image/webp;base64,..." alt="..."> replacing this .screen contents. Keep the .phone frame. -->
+<div class="screen" data-screenshot="1" role="img" aria-label="Loopnote welcome screen (screenshot placeholder)"><div class="island"></div><div class="sbar"><span>9:41</span><span class="sig"><i style="height:.35em"></i><i style="height:.5em"></i><i style="height:.65em"></i><i style="height:.8em"></i><b class="bat"></b></span></div><div class="welcome">
+<span class="app-ic"><svg class="ic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg></span>
+<div class="s-h" style="margin-top:.7em">Loopnote</div>
+<div class="s-sub">Say it once.</div>
+<div class="wave" style="height:3.5em;margin:1.2em 0" aria-hidden="true"><i style="--h:30%;--d:0s"></i><i style="--h:55%;--d:0.1s"></i><i style="--h:80%;--d:0.2s"></i><i style="--h:45%;--d:0.3s"></i><i style="--h:95%;--d:0.15s"></i><i style="--h:65%;--d:0.25s"></i><i style="--h:40%;--d:0.05s"></i><i style="--h:85%;--d:0.35s"></i><i style="--h:60%;--d:0.2s"></i><i style="--h:100%;--d:0.1s"></i><i style="--h:70%;--d:0.3s"></i><i style="--h:35%;--d:0.05s"></i><i style="--h:75%;--d:0.25s"></i><i style="--h:50%;--d:0.15s"></i><i style="--h:90%;--d:0.35s"></i><i style="--h:45%;--d:0.2s"></i><i style="--h:25%;--d:0.1s"></i></div>
+<div class="rec-btn"><i style="border-radius:999px"></i></div>
+<div class="s-sub" style="margin-top:.6em">Tap to record</div>
+</div><span class="ph-tag">Screenshot placeholder</span><span class="home-ind"></span></div></div>
+    </div>
+    <div class="rise-fade"></div>
+  </section>
+
+  <!-- ============ 9. footer: brand + copyright + three link columns (in-page anchors only) ============ -->
+  <footer>
+    <div class="foot">
+      <div>
+        <a class="brand" href="#top" style="margin-bottom:1rem">
+          <span class="brand-mark">
+            <svg class="ic" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 10v3"/><path d="M6 6v11"/><path d="M10 3v18"/><path d="M14 8v7"/><path d="M18 5v13"/><path d="M22 10v3"/></svg>
+          </span>
+          <span style="color:#fff">Loopnote</span>
+        </a>
+        <div style="margin-top:1rem">Copyright 2026 Loopnote</div>
+        <div style="margin-top:.5rem">iPhone and Apple Watch, on the App Store</div>
+      </div>
+      <div class="foot-cols">
+        <div>
+          <b style="color:var(--n300);font-weight:600">App</b>
+          <a href="#features">Features</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#download">Download</a>
+        </div>
+        <div>
+          <b style="color:var(--n300);font-weight:600">Legal</b>
+          <a href="#privacy">Privacy Policy</a>
+          <a href="#terms">Terms</a>
+        </div>
+        <div>
+          <b style="color:var(--n300);font-weight:600">Help</b>
+          <a href="#support">Support</a>
+          <a href="#faq">FAQ</a>
+        </div>
+      </div>
+    </div>
+    <!-- legal stubs: keep the anchors; link or expand to the real documents before launch -->
+    <div class="legal">
+      <p id="privacy"><b>Privacy Policy</b>Audio is transcribed on your iPhone and never leaves the phone. The full privacy policy will be published here.</p>
+      <p id="terms"><b>Terms</b>Use of Loopnote and Pro subscriptions follows the terms published here and the App Store terms.</p>
+      <p id="support"><b>Support</b>Questions or problems? Email <a href="#support">support@loopnote.example</a> and we reply within two business days.</p>
+    </div>
+  </footer>
+</main>
+
+<!-- app preview modal -->
+<div class="modal" id="tourModal" role="dialog" aria-modal="true" aria-label="App preview">
+  <div class="modal-box">
+    <button class="modal-close" id="tourClose">
+      <svg class="ic" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      Close
+    </button>
+    <div class="dash">
+      <div class="dash-main">
+        <div class="dash-top"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="addr">Loopnote &middot; app preview &middot; 30 s</span></div>
+        <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:var(--n400);padding:1rem">
+          <span class="orb" style="width:4.5rem;height:4.5rem;color:#fff">
+            <svg class="ic" viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none" aria-hidden="true"><path d="M6 3.5 20 12 6 20.5z"/></svg>
+          </span>
+          <p style="max-width:24rem;text-align:center;font-size:.85rem">Your App Store preview video plays here. This page stays fully offline, so embed the real clip when you publish.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* nav shrink */
+const nav=document.getElementById('nav');
+const onScrollNav=()=>{nav.classList.toggle('scrolled',window.scrollY>100)};
+window.addEventListener('scroll',onScrollNav,{passive:true});onScrollNav();
+
+/* mobile menu */
+const burger=document.getElementById('burger'),mnav=document.getElementById('mnav');
+const bOpen=document.getElementById('burger-open'),bClose=document.getElementById('burger-close');
+burger.addEventListener('click',()=>{
+  const open=mnav.classList.toggle('open');
+  burger.setAttribute('aria-expanded',open);
+  bOpen.style.display=open?'none':'';bClose.style.display=open?'':'none';
+});
+mnav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{
+  mnav.classList.remove('open');burger.setAttribute('aria-expanded','false');
+  bOpen.style.display='';bClose.style.display='none';
+}));
+
+/* reveal on scroll */
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}
+}),{threshold:.15});
+document.querySelectorAll('.rv').forEach(el=>io.observe(el));
+
+/* hero 3D tilt driven by scroll */
+const tilt=document.getElementById('tiltCard');
+const tiltUpdate=()=>{
+  if(!tilt)return;
+  const r=tilt.getBoundingClientRect(),vh=window.innerHeight;
+  let p=1-(r.top-vh*0.12)/(vh*0.55);
+  p=Math.max(0,Math.min(1,p));
+  tilt.style.transform=`rotateX(${(1-p)*20}deg)`;
+};
+window.addEventListener('scroll',tiltUpdate,{passive:true});
+window.addEventListener('resize',tiltUpdate);tiltUpdate();
+
+/* iPhone rises and turns upright on scroll (replaces the MacBook lid) */
+const risePhone=document.getElementById('risePhone');
+const riseUpdate=()=>{
+  if(!risePhone)return;
+  const r=risePhone.getBoundingClientRect(),vh=window.innerHeight;
+  let p=(vh-r.top)/(vh*0.75);
+  p=Math.max(0,Math.min(1,p));
+  risePhone.style.transform=`translateY(${(1-p)*90}px) rotateX(${(1-p)*38}deg) rotate(${(1-p)*-6}deg)`;
+};
+window.addEventListener('scroll',riseUpdate,{passive:true});
+window.addEventListener('resize',riseUpdate);riseUpdate();
+
+/* pricing switch */
+const sw=document.getElementById('billSwitch');
+const lm=document.getElementById('lblMonthly'),ly=document.getElementById('lblYearly');
+sw.addEventListener('click',()=>{
+  const yearly=sw.classList.toggle('on');
+  sw.setAttribute('aria-checked',yearly);
+  lm.classList.toggle('on',!yearly);ly.classList.toggle('on',yearly);
+  document.querySelectorAll('.price[data-monthly]').forEach(p=>{
+    p.textContent=yearly?p.dataset.yearly:p.dataset.monthly;
+  });
+});
+
+/* testimonial slider */
+const quotes=[...document.querySelectorAll('.quote')];
+const pills=[...document.querySelectorAll('.t-pill')];
+const halos=[...document.querySelectorAll('.halo .mono')];
+let tActive=0,tAuto=true;
+function setT(i){
+  tActive=i;
+  quotes.forEach((q,j)=>q.classList.toggle('on',j===i));
+  pills.forEach((p,j)=>p.classList.toggle('on',j===i));
+  halos.forEach((h,j)=>h.classList.toggle('on',j===i));
+}
+pills.forEach(p=>p.addEventListener('click',()=>{tAuto=false;setT(+p.dataset.i)}));
+setInterval(()=>{if(tAuto)setT((tActive+1)%quotes.length)},7000);
+
+/* sparkle field above the slider avatar */
+const sf=document.getElementById('sparkfield');
+if(sf){for(let i=0;i<26;i++){
+  const s=document.createElement('span');s.className='spark';
+  s.style.left=(Math.random()*100).toFixed(1)+'%';
+  s.style.top=(Math.random()*100).toFixed(1)+'%';
+  s.style.setProperty('--d',(Math.random()*2.4).toFixed(2)+'s');
+  sf.appendChild(s);
+}}
+
+/* meteors: randomize each loop */
+document.querySelectorAll('.meteor').forEach(m=>{
+  m.addEventListener('animationiteration',()=>{
+    m.style.setProperty('--mdur',(2+Math.random()*2.5).toFixed(2)+'s');
+    m.style.setProperty('--mw',Math.floor(80+Math.random()*70)+'px');
+  });
+});
+
+/* faq accordion (single open) */
+const qas=[...document.querySelectorAll('.qa')];
+qas.forEach(qa=>{
+  const btn=qa.querySelector('.qa-btn'),body=qa.querySelector('.qa-body');
+  btn.addEventListener('click',()=>{
+    const isOpen=qa.classList.contains('open');
+    qas.forEach(o=>{o.classList.remove('open');o.querySelector('.qa-body').style.maxHeight='0px'});
+    if(!isOpen){qa.classList.add('open');body.style.maxHeight=body.scrollHeight+'px'}
+  });
+});
+
+/* product tour modal */
+const modal=document.getElementById('tourModal');
+document.getElementById('playBtn').addEventListener('click',()=>modal.classList.add('open'));
+document.getElementById('tourClose').addEventListener('click',()=>modal.classList.remove('open'));
+modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('open')});
+</script>
+</body>
+</html>
